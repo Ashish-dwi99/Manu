@@ -2,13 +2,14 @@
 
 JudgeDesk (`Ashish-dwi99/JudgeDesk`) is a PRD and a Next.js prototype of a decision-support
 dashboard for Sessions judges (pilot: South District, Saket). In Manu it is not a separate
-product. It is the **judge lens** on the same diary.
+product, and not a separate mode either: a judge uses the same case OS as an advocate. The
+cause list is the day's list; liberty labels and the arithmetic are on every case for everyone.
 
 ## What carried over
 
 | JudgeDesk | Manu |
 | --- | --- |
-| Cause list with smart labels | Diary → *View as Judge*: 479 ALERT, BAIL, URGENT, WOMAN, JUVENILE, plus DATA GAP |
+| Cause list with smart labels | Today's list, for every user: 479 ALERT, BAIL, URGENT, WOMAN, JUVENILE, plus DATA GAP |
 | Custody column | Days in custody on each row |
 | Case detail: header, timeline, last order, action panel | Case page: header + labels, next hearing, last order with the text, directions with sources, timeline, history |
 | Section 479 alert with computation | Section 479 block with the working, flags and gaps (`law/s479.py`) |

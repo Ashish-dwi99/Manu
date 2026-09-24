@@ -1,186 +1,262 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowUp, Check, CheckCheck, Download, FileText, Search, Upload, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FileText, PanelRight, RefreshCw, ShieldAlert, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api.js";
-import { countdown, eventLabel, formatDate, s479Headline, verificationLabel } from "../model.js";
-import { Labels, Loading } from "./common.jsx";
+import { countdown, courtLabel, formatDate, humanDates, plural, s479Headline } from "../model.js";
+import { CitePill, Labels, Loading } from "./common.jsx";
+import { MatchList, SourcePanel } from "./SourcePanel.jsx";
 
-const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "papers", label: "Papers" },
-  { id: "ask", label: "Ask this case" },
-  { id: "dates", label: "List of dates" },
-];
+const overlayPanel = () => typeof window !== "undefined" && window.innerWidth < 1180;
 
-export function CaseView({ caseId, lens, today, onBack }) {
-  const [tab, setTab] = useState("overview");
-  const [page, setPage] = useState(null);
-  const query = useQuery({ queryKey: ["case", caseId, today, lens], queryFn: () => api.case(caseId, today, lens) });
+function readPanelPref() {
+  // Where the panel would cover the case, it waits to be asked for.
+  if (overlayPanel()) return false;
+  try {
+    return localStorage.getItem("manu.panel") !== "closed";
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * One case, read in a minute: when it is next listed and for what, what the court said
+ * last, what somebody has to do, and — in a criminal case — the liberty arithmetic. Every
+ * line carries a numbered source that opens the order at those words.
+ */
+export function CaseView({ caseId, today }) {
+  const query = useQuery({ queryKey: ["case", caseId, today], queryFn: () => api.case(caseId, today) });
+  const [panelOpen, setPanelOpen] = useState(readPanelPref);
+  const [panel, setPanel] = useState({ tab: "source", list: [], index: 0 });
   const c = query.data;
+
+  useEffect(() => {
+    if (overlayPanel()) return;
+    try {
+      localStorage.setItem("manu.panel", panelOpen ? "open" : "closed");
+    } catch {
+      /* private window */
+    }
+  }, [panelOpen]);
+
+  const openCite = (list, index) => {
+    setPanel({ tab: "source", list, index });
+    setPanelOpen(true);
+  };
+  const cites = useMemo(() => (c ? caseCites(c) : []), [c]);
+  const numberOf = (key) => cites.findIndex((x) => x.key === key) + 1;
+  const citeProps = (key) => {
+    const n = numberOf(key);
+    const cite = cites[n - 1];
+    return {
+      n,
+      verification: cite?.verification,
+      label: cite?.label,
+      active: panelOpen && panel.tab === "source" && panel.list?.[panel.index]?.key === key,
+      onClick: () => openCite(cites, n - 1),
+    };
+  };
+
+  // The first time a case opens, the source panel shows the last order.
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (c && !seeded.current) {
+      seeded.current = true;
+      if (cites.length) setPanel({ tab: "source", list: cites, index: 0 });
+    }
+  }, [c, cites]);
+
   return (
-    <div className="mn-measure wide">
-      <button type="button" className="mn-btn accent small mn-back" onClick={onBack}>
-        <ArrowLeft size={15} /> Diary
-      </button>
-      <Loading query={query}>
-        {c ? (
-          <>
-            <header className="mn-case-head">
-              <p className="mn-kicker">
-                {c.case_number || c.cnr} · {c.court || "Court not yet read"}
-              </p>
-              <h1 className="mn-title">{c.title}</h1>
-              <p className="mn-case-sub">
-                <span>Stage: {c.stage.replace("_", " ")}</span>
-                {c.status ? <span>Court status: {c.status}</span> : null}
-                <span>CNR {c.cnr}</span>
-              </p>
-              <Labels labels={c.labels} />
-            </header>
+    <div className={`mn-case ${panelOpen ? "with-panel" : ""}`}>
+      <section className="mn-sheet mn-case-sheet">
+        <Loading query={query}>
+          {c ? (
+            <>
+              <header className="mn-case-head">
+                <div className="mn-case-title">
+                  <h1>{c.title}</h1>
+                  <p className="mono">
+                    {[c.case_number, courtLabel(c.court), `CNR ${c.cnr}`, c.stage.replace("_", " ")].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+                <div className="mn-case-tools">
+                  {c.next_date ? (
+                    <span className="mn-next-chip">
+                      <b>{formatDate(c.next_date).slice(0, 6)}</b> {countdown(c.next_date, today).toLowerCase()}
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={`mn-icon ${panelOpen ? "on" : ""}`}
+                    aria-label={panelOpen ? "Hide sources" : "Show sources"}
+                    aria-pressed={panelOpen}
+                    onClick={() => setPanelOpen(!panelOpen)}
+                  >
+                    <PanelRight size={17} />
+                  </button>
+                </div>
+              </header>
 
-            <div className="mn-tabs" role="tablist">
-              {TABS.map((t) => (
-                <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            {tab === "overview" ? <Overview c={c} today={today} /> : null}
-            {tab === "papers" ? <Papers caseId={caseId} onOpenPage={setPage} /> : null}
-            {tab === "ask" ? <Ask caseId={caseId} c={c} onOpenPage={setPage} /> : null}
-            {tab === "dates" ? <Dates caseId={caseId} /> : null}
-          </>
-        ) : null}
-      </Loading>
-      {page ? <PageDrawer target={page} onClose={() => setPage(null)} /> : null}
+              <div className="mn-case-scroll">
+                <div className="mn-case-body">
+                  <Labels labels={c.labels} />
+                  <NextHearing c={c} today={today} />
+                  <LastOrder c={c} cite={citeProps("order")} onRead={() => openCite(cites, numberOf("order") - 1)} />
+                  <Directions c={c} today={today} citeProps={citeProps} />
+                  {c.criminal ? <Liberty criminal={c.criminal} today={today} /> : null}
+                  {c.bail_facts?.applicable ? <BailFacts facts={c.bail_facts} /> : null}
+                  <Conversation c={c} openCite={openCite} openTab={(tab) => {
+                    setPanel({ ...panel, tab });
+                    setPanelOpen(true);
+                  }} />
+                </div>
+              </div>
+            </>
+          ) : null}
+        </Loading>
+      </section>
+      {c && panelOpen ? <SourcePanel c={c} panel={panel} setPanel={setPanel} openCite={openCite} onClose={() => setPanelOpen(false)} /> : null}
+      {c && panelOpen ? <div className="mn-panel-scrim" onClick={() => setPanelOpen(false)} aria-hidden="true" /> : null}
     </div>
   );
 }
 
-/* -- overview -------------------------------------------------------------------- */
+/** Every source on the case page, numbered in reading order: last order, then open directions. */
+function caseCites(c) {
+  const out = [];
+  const orderOn = (uri) => c.orders.find((o) => o.uri === uri)?.on;
+  if (c.last_order) {
+    out.push({
+      key: "order",
+      kind: "order",
+      on: c.last_order.on,
+      quote: "",
+      verification: "verified",
+      label: `Order dated ${formatDate(c.last_order.on)}`,
+    });
+  }
+  for (const o of c.obligations.filter((x) => x.status === "open")) {
+    const on = orderOn(o.source.uri);
+    out.push({
+      key: o.id,
+      kind: "order",
+      on,
+      quote: o.source.quote,
+      span: o.source.span,
+      verification: o.source.verification,
+      label: on ? `Order dated ${formatDate(on)}` : "Order not on record",
+    });
+  }
+  return out;
+}
 
-function Overview({ c, today }) {
+/* -- the brief -------------------------------------------------------------------------- */
+
+function NextHearing({ c, today }) {
   return (
-    <div className="mn-grid">
-      <div className="mn-col">
-        <section className="mn-card sunken">
-          <h3>Next hearing</h3>
-          <p className="mn-big">
-            {c.next_date ? formatDate(c.next_date) : "Not listed"}
-            {c.next_date ? <small> · {countdown(c.next_date, today)}</small> : null}
-          </p>
-          <p>{c.next_purpose || "Purpose not recorded"}</p>
-        </section>
-        <LastOrder order={c.last_order} />
-        <Directions c={c} today={today} />
-        {c.criminal ? <Liberty criminal={c.criminal} /> : null}
-        {c.bail_facts?.applicable ? <BailFacts facts={c.bail_facts} /> : null}
-      </div>
-      <div className="mn-col">
-        <section className="mn-card">
-          <h3>Timeline</h3>
-          {c.timeline.length ? (
-            <ol className="mn-timeline">
-              {c.timeline.map((item, i) => (
-                <li key={`${item.on}-${i}`} className={`kind-${item.kind}`}>
-                  <time>{formatDate(item.on)}</time>
-                  <span>{item.label}</span>
-                  {item.detail ? <small className="mn-faint">{item.detail}</small> : null}
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="mn-faint">Nothing on record yet.</p>
-          )}
-        </section>
-        <section className="mn-card">
-          <h3>History</h3>
-          <ol className="mn-timeline">
-            {c.events.map((event) => (
-              <li key={event.id}>
-                <time>
-                  {eventLabel(event.kind)} · {formatDate(event.at)}
-                </time>
-                <span>{event.summary}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      </div>
-    </div>
+    <section className="mn-next">
+      <p className="mn-eyebrow">Next hearing</p>
+      {c.next_date ? (
+        <p className="mn-next-date">
+          {formatDate(c.next_date)} <span>{countdown(c.next_date, today)}</span>
+        </p>
+      ) : (
+        <p className="mn-next-date">{c.stage === "disposed" ? "Disposed" : "Not listed yet"}</p>
+      )}
+      {c.next_purpose ? <p className="mn-next-purpose">For {c.next_purpose.charAt(0).toLowerCase() + c.next_purpose.slice(1)}</p> : null}
+    </section>
   );
 }
 
-function LastOrder({ order }) {
+function LastOrder({ c, cite, onRead }) {
+  const order = c.last_order;
   if (!order) {
     return (
-      <section className="mn-card">
-        <h3>Last order</h3>
+      <section className="mn-part">
+        <h2 className="mn-part-title">Last order</h2>
         <p className="mn-faint">No order on record yet.</p>
       </section>
     );
   }
   return (
-    <section className="mn-card">
-      <h3>Last order · {formatDate(order.on)}</h3>
-      {order.title ? <p style={{ fontWeight: 600 }}>{order.title}</p> : null}
-      <p className="mn-order">{order.excerpt}</p>
-      <p className="mn-source">
-        <FileText size={13} /> {order.source.uri || "court record"}
-        {order.source.connector ? ` · via ${order.source.connector}` : ""}
-      </p>
+    <section className="mn-part">
+      <h2 className="mn-part-title">
+        Last order <span>· {formatDate(order.on)}</span>
+      </h2>
+      <div className="mn-order-card">
+        <p className="mn-order-title">
+          {order.title || "Order"} <CitePill {...cite} />
+        </p>
+        <p className="mn-order-text">{order.excerpt}</p>
+        <button type="button" className="mn-text-btn" onClick={onRead}>
+          <BookOpenText size={14} /> Read the order
+        </button>
+      </div>
     </section>
   );
 }
 
-function Directions({ c, today }) {
+function Directions({ c, today, citeProps }) {
   const queryClient = useQueryClient();
   const update = useMutation({
     mutationFn: ({ id, status }) => api.setObligation(c.id, id, status),
     onSuccess: () => queryClient.invalidateQueries(),
   });
-  const open = c.obligations.filter((o) => o.status === "open");
+  const open = c.obligations.filter((o) => o.status === "open").sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
   const closed = c.obligations.filter((o) => o.status !== "open");
   return (
-    <section className="mn-card">
-      <h3>Directions · {open.length} open</h3>
-      {!open.length ? <p className="mn-faint">No open directions.</p> : null}
-      <ul className="mn-obligations">
-        {open.map((o) => (
-          <li key={o.id}>
-            <div className="mn-ob-head">
-              <strong>{o.who}</strong>
-              <span className={o.due && o.due < today ? "mn-overdue" : "mn-faint"}>
-                {o.due ? `${formatDate(o.due)} · ${countdown(o.due, today)}` : "No date given"}
-              </span>
-            </div>
-            <p>{o.what}</p>
-            <p className={`mn-verify v-${o.source.verification}`}>{verificationLabel(o.source.verification)}</p>
-            <div className="mn-actions">
-              {o.source.verification === "lead" ? (
-                <button type="button" className="mn-btn small" onClick={() => update.mutate({ id: o.id, status: "confirmed" })}>
-                  <Check size={14} /> Confirm
-                </button>
-              ) : null}
-              <button type="button" className="mn-btn small" onClick={() => update.mutate({ id: o.id, status: "done" })}>
-                <CheckCheck size={14} /> Done
-              </button>
-              <button type="button" className="mn-btn small" onClick={() => update.mutate({ id: o.id, status: "dismissed" })}>
-                <X size={14} /> Not a direction
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+    <section className="mn-part">
+      <h2 className="mn-part-title">
+        To do <span>· {open.length ? `${open.length} open` : "nothing open"}</span>
+      </h2>
+      {open.length ? (
+        <ul className="mn-todo">
+          {open.map((o) => {
+            const late = o.due && o.due < today;
+            return (
+              <li key={o.id} className={late ? "late" : ""}>
+                <span className="mn-todo-who">{o.who}</span>
+                <span className="mn-todo-what">
+                  {o.what} <CitePill {...citeProps(o.id)} />
+                  {o.source.verification === "lead" ? <em className="mn-todo-lead">Read by Manu — confirm</em> : null}
+                </span>
+                <span className={`mn-todo-due ${late ? "red" : o.due === today ? "amber" : ""}`}>
+                  {o.due ? countdown(o.due, today) : "No date"}
+                  {o.due ? <small>{formatDate(o.due)}</small> : null}
+                </span>
+                <span className="mn-todo-actions">
+                  {o.source.verification === "lead" ? (
+                    <button type="button" className="mn-btn small" onClick={() => update.mutate({ id: o.id, status: "confirmed" })} title="The order says this">
+                      <Check size={14} /> Confirm
+                    </button>
+                  ) : null}
+                  <button type="button" className="mn-icon small" aria-label="Mark done" title="Done" onClick={() => update.mutate({ id: o.id, status: "done" })}>
+                    <CheckCheck size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className="mn-icon small"
+                    aria-label="Not a direction"
+                    title="Not a direction"
+                    onClick={() => update.mutate({ id: o.id, status: "dismissed" })}
+                  >
+                    <X size={15} />
+                  </button>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
       {closed.length ? (
-        <details className="mn-closed">
-          <summary>{closed.length} closed</summary>
-          <ul>
+        <details className="mn-more">
+          <summary>
+            <ChevronDown size={14} /> {closed.length} closed
+          </summary>
+          <ul className="mn-closed">
             {closed.map((o) => (
               <li key={o.id}>
-                {o.status}: {o.who} — {o.what}
+                <b>{o.status}</b> {o.who} — {o.what}
               </li>
             ))}
           </ul>
@@ -190,359 +266,298 @@ function Directions({ c, today }) {
   );
 }
 
-function Liberty({ criminal }) {
+const DEFAULT_BAIL = {
+  insufficient_data: "Cannot compute — data missing",
+  needs_review: "Needs review",
+  chargesheet_filed: "Chargesheet filed before the right accrued",
+  accrued: "Right has accrued",
+  approaching: "Right accrues soon",
+  not_yet: "Not yet",
+};
+
+const ALERT = new Set(["approaching", "crossed", "maximum_exceeded", "accrued"]);
+
+function Liberty({ criminal, today }) {
+  const gaps = criminal.charges.filter((ch) => !ch.offence);
   return (
-    <section className="mn-card">
-      <h3>Charges and liberty</h3>
-      <ul className="mn-charges">
-        {criminal.charges.map((charge) => (
-          <li key={charge.raw}>
-            <span>
-              <strong>{charge.raw}</strong>
-              {charge.title ? ` — ${charge.title}` : ""}
-            </span>
-            {!charge.offence ? <span className="mn-overdue">Not matched{charge.suggested ? ` (likely ${charge.suggested})` : ""}</span> : null}
-            {charge.warnings
-              .filter((w) => !w.includes("not been reviewed"))
-              .map((w) => (
-                <small key={w} className="mn-warning">
-                  {w}
-                </small>
-              ))}
-          </li>
+    <section className="mn-part">
+      <h2 className="mn-part-title">
+        Liberty <span>· computed by fixed rules, the court decides</span>
+      </h2>
+      <p className="mn-charges">
+        {criminal.charges.map((ch) => (
+          <span key={ch.raw} className={ch.offence ? "" : "gap"} title={ch.offence ? ch.title : "Not matched to the offence table"}>
+            {ch.raw}
+            {ch.title ? <small> {ch.title}</small> : null}
+          </span>
         ))}
-      </ul>
-      {criminal.accused.map((a) => {
-        const alert = ["approaching", "crossed", "maximum_exceeded"].includes(a.s479.status);
-        return (
-          <div key={a.name} style={{ display: "grid", gap: 10 }}>
-            <p>
-              <strong>{a.name}</strong> <span className="mn-faint">{a.in_custody ? "in custody" : "not in custody"}</span>
-            </p>
-            <div className={`mn-liberty ${alert ? "alert" : ""}`}>
-              <strong>Section 479 BNSS — {s479Headline(a.s479)}</strong>
-              {a.s479.percent != null ? (
-                <div className="mn-meter" role="meter" aria-valuenow={a.s479.percent} aria-valuemin={0} aria-valuemax={100} aria-label="Share of threshold served">
-                  <span style={{ width: `${Math.min(100, a.s479.percent)}%` }} />
-                </div>
-              ) : null}
-              <ol className="mn-working">
-                {a.s479.working.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ol>
-              {[...a.s479.gaps, ...a.s479.flags]
-                .filter((w) => !w.includes("not yet reviewed"))
-                .map((w) => (
-                  <small key={w} className="mn-warning">
-                    {w}
-                  </small>
-                ))}
-            </div>
-            {a.default_bail.status !== "not_applicable" ? (
-              <div className={`mn-liberty ${["approaching", "accrued"].includes(a.default_bail.status) ? "alert" : ""}`}>
-                <strong>
-                  Default bail — {a.default_bail.status.replace("_", " ")}
-                  {a.default_bail.accrual_date ? ` · accrues ${formatDate(a.default_bail.accrual_date)}` : ""}
-                </strong>
-                <ol className="mn-working">
-                  {a.default_bail.working.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ol>
-                {[...a.default_bail.gaps, ...a.default_bail.flags].map((w) => (
-                  <small key={w} className="mn-warning">
-                    {w}
-                  </small>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
-      <p className="mn-footnote">Computed from the record by fixed rules, with the working shown. The court decides.</p>
+      </p>
+      {gaps.map((ch) => (
+        <p key={ch.raw} className="mn-warning">
+          <ShieldAlert size={14} /> {ch.raw} is not in the offence table
+          {ch.suggested ? ` — possibly ${ch.suggested}; check the record` : ""}. Nothing is computed from it.
+        </p>
+      ))}
+      {criminal.accused.map((a) => (
+        <div key={a.name} className="mn-accused">
+          <p className="mn-accused-name">
+            {a.name}
+            <small>{a.in_custody ? `in custody · ${a.s479.days_detained ?? "?"} days` : "not in custody"}</small>
+          </p>
+          <Reckoner
+            title="s.479 BNSS"
+            status={a.s479.status}
+            headline={s479Headline(a.s479)}
+            when={a.s479.crossing_date ? `${a.s479.threshold} on ${formatDate(a.s479.crossing_date)} · ${countdown(a.s479.crossing_date, today).toLowerCase()}` : ""}
+            percent={a.s479.percent}
+            working={a.s479.working}
+            notes={[...a.s479.gaps, ...a.s479.flags].filter((w) => !w.includes("not yet reviewed"))}
+          />
+          {a.default_bail.status !== "not_applicable" ? (
+            <Reckoner
+              title="Default bail"
+              status={a.default_bail.status}
+              headline={DEFAULT_BAIL[a.default_bail.status] || a.default_bail.status.replaceAll("_", " ")}
+              when={
+                a.default_bail.accrual_date
+                  ? ["approaching", "not_yet"].includes(a.default_bail.status)
+                    ? `accrues ${formatDate(a.default_bail.accrual_date)} · ${countdown(a.default_bail.accrual_date, today).toLowerCase()}`
+                    : `period ran to ${formatDate(a.default_bail.accrual_date)}`
+                  : ""
+              }
+              working={a.default_bail.working}
+              notes={[...a.default_bail.gaps, ...a.default_bail.flags]}
+            />
+          ) : null}
+        </div>
+      ))}
     </section>
+  );
+}
+
+function Reckoner({ title, status, headline, when, percent, working, notes }) {
+  const alert = ALERT.has(status);
+  return (
+    <details className={`mn-reckoner ${alert ? "alert" : ""}`}>
+      <summary>
+        <span className="mn-reckoner-title">{title}</span>
+        <span className="mn-reckoner-head">
+          {headline}
+          {when ? <small>{when}</small> : null}
+        </span>
+        {percent != null ? (
+          <span className="mn-meter" role="meter" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label="Share of threshold served">
+            <span style={{ width: `${Math.min(100, percent)}%` }} />
+          </span>
+        ) : null}
+        <span className="mn-reckoner-more">Working</span>
+      </summary>
+      <ol className="mn-working">
+        {working.map((line) => (
+          <li key={line}>{humanDates(line)}</li>
+        ))}
+      </ol>
+      {notes.map((w) => (
+        <p key={w} className="mn-warning">
+          {humanDates(w)}
+        </p>
+      ))}
+    </details>
   );
 }
 
 function BailFacts({ facts }) {
+  const gaps = facts.factors.reduce((n, f) => n + f.items.filter((i) => i.value === "Data unavailable").length + f.gaps.length, 0);
   return (
-    <section className="mn-card">
-      <h3>Bail facts</h3>
-      <p className="mn-soft">{facts.note}</p>
+    <details className="mn-part mn-bail">
+      <summary>
+        <h2 className="mn-part-title">
+          Bail facts <span>· six factors, each with its source{gaps ? ` · ${gaps} gaps` : ""}</span>
+        </h2>
+        <ChevronDown size={15} />
+      </summary>
+      <p className="mn-faint small">{facts.note}</p>
       <div className="mn-facts">
         {facts.factors.map((factor) => (
           <div key={factor.title} className="mn-fact">
             <h4>{factor.title}</h4>
-            <small className="mn-faint">Source: {factor.source}</small>
             <dl>
               {factor.items.map((item) => (
                 <div key={item.label}>
                   <dt>{item.label}</dt>
-                  <dd className={item.value === "Data unavailable" ? "mn-gap" : ""}>{item.value}</dd>
+                  <dd className={item.value === "Data unavailable" ? "gap" : ""}>{item.value}</dd>
                 </div>
               ))}
             </dl>
             {factor.gaps.map((gap) => (
-              <small key={gap} className="mn-gap">
+              <p key={gap} className="mn-gap">
                 {gap}
-              </small>
+              </p>
             ))}
+            <small className="mn-fact-source">
+              <FileText size={12} /> {factor.source}
+            </small>
           </div>
         ))}
       </div>
-    </section>
+    </details>
   );
 }
 
-/* -- papers ------------------------------------------------------------------------ */
+/* -- ask this case ----------------------------------------------------------------------- */
 
-function Papers({ caseId, onOpenPage }) {
-  const queryClient = useQueryClient();
-  const input = useRef(null);
-  const [q, setQ] = useState("");
-  const docs = useQuery({ queryKey: ["documents", caseId], queryFn: () => api.documents(caseId) });
-  const upload = useMutation({
-    mutationFn: (file) => api.upload(caseId, file),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents", caseId] }),
+function answerCites(quotes, docs) {
+  return (quotes || []).map((q) => {
+    if (!q.verified) return { kind: "none", quote: q.quote, verification: "missing", label: "Not found in this case's papers" };
+    const order = /^Order dated (\d{2})\.(\d{2})\.(\d{4})$/.exec(q.source || "");
+    if (order) return { kind: "order", on: `${order[3]}-${order[2]}-${order[1]}`, quote: q.quote, verification: "verified", label: q.source };
+    const doc = docs.find((d) => d.name === q.source);
+    return doc
+      ? { kind: "doc", docId: doc.id, page: q.page || 1, quote: q.quote, verification: "verified", label: `${q.source}, p. ${q.page}` }
+      : { kind: "none", quote: q.quote, verification: "verified", label: q.source };
   });
-  const search = useMutation({ mutationFn: (text) => api.search(caseId, text) });
-  return (
-    <div className="mn-grid">
-      <div className="mn-col">
-        <form
-          className="mn-search"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (q.trim()) search.mutate(q.trim());
-          }}
-        >
-          <Search size={17} className="mn-faint" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find in the papers and orders — e.g. recovered, first-time offender" />
-          <button type="submit" className="mn-btn ink small" disabled={!q.trim()}>
-            Find
-          </button>
-        </form>
-        {search.data ? <Matches matches={search.data.matches} onOpenPage={onOpenPage} empty={`Nothing in the papers says “${search.data.query}”.`} /> : null}
-        {search.error ? <p className="mn-error">{String(search.error.message)}</p> : null}
-      </div>
-      <div className="mn-col">
-        <section className="mn-card">
-          <h3>Papers · {docs.data?.documents.length ?? 0}</h3>
-          <ul className="mn-docs">
-            {(docs.data?.documents || []).map((d) => (
-              <li key={d.id} className="mn-doc">
-                <FileText size={18} className="mn-faint" />
-                <div>
-                  <span>{d.name}</span>
-                  <small>
-                    {d.kind.replace("_", " ")} · {d.pages} {d.pages === 1 ? "page" : "pages"}
-                    {d.pages_without_text ? ` · ${d.pages_without_text} need OCR` : ""}
-                  </small>
-                </div>
-                <button type="button" className="mn-chip" onClick={() => onOpenPage({ docId: d.id, page: 1 })}>
-                  p. 1
-                </button>
-              </li>
-            ))}
-          </ul>
-          <button type="button" className="mn-drop" onClick={() => input.current?.click()} disabled={upload.isPending}>
-            <Upload size={17} /> {upload.isPending ? "Reading…" : "Add PDF, Word or text"}
-          </button>
-          <input
-            ref={input}
-            type="file"
-            accept=".pdf,.docx,.txt,.md"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) upload.mutate(file);
-              event.target.value = "";
-            }}
-          />
-          {upload.error ? <p className="mn-error">{String(upload.error.message)}</p> : null}
-          <p className="mn-faint" style={{ fontSize: 12.5 }}>
-            Orders Manu reads from the court are searched too.
-          </p>
-        </section>
-      </div>
-    </div>
-  );
 }
 
-function Matches({ matches, onOpenPage, empty }) {
-  if (!matches.length) return <p className="mn-empty">{empty}</p>;
-  return (
-    <ul className="mn-matches">
-      {matches.map((m, i) => (
-        <li key={`${m.ref}-${m.page}-${i}`}>
-          <p className="mn-source">
-            <FileText size={13} /> {m.name}
-            {m.kind === "document" ? (
-              <button type="button" className="mn-chip" onClick={() => onOpenPage({ docId: m.ref, page: m.page, terms: m.terms })}>
-                p. {m.page}
-              </button>
-            ) : (
-              <span className="mn-chip">order</span>
-            )}
-          </p>
-          <blockquote>{m.quote}</blockquote>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function highlight(text, terms) {
-  const words = (terms || []).filter(Boolean);
-  if (!words.length) return text;
-  const pattern = new RegExp(`(${words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
-  return text.split(pattern).map((part, i) => (i % 2 ? <mark key={i}>{part}</mark> : part));
-}
-
-function PageDrawer({ target, onClose }) {
-  const query = useQuery({ queryKey: ["page", target.docId, target.page], queryFn: () => api.page(target.docId, target.page) });
-  const text = query.data?.text || "";
-  return (
-    <div className="mn-scrim right" role="presentation" onMouseDown={onClose}>
-      <aside className="mn-drawer" role="dialog" aria-label="Document page" onMouseDown={(e) => e.stopPropagation()}>
-        <header>
-          <div>
-            <p className="mn-kicker">{query.data ? `Page ${query.data.page} of ${query.data.document.pages}` : "Loading…"}</p>
-            <h2>{query.data?.document.name || ""}</h2>
-          </div>
-          <button type="button" className="mn-icon" aria-label="Close" onClick={onClose}>
-            <X size={16} />
-          </button>
-        </header>
-        {query.data ? (
-          <div className="mn-page-text">{text ? highlight(text, target.terms) : <span className="mn-faint">This page has no text layer. It needs OCR.</span>}</div>
-        ) : null}
-      </aside>
-    </div>
-  );
-}
-
-/* -- ask ------------------------------------------------------------------------------ */
-
-function Ask({ caseId, c, onOpenPage }) {
+function Conversation({ c, openCite, openTab }) {
   const [question, setQuestion] = useState("");
-  const ask = useMutation({ mutationFn: (q) => api.ask(caseId, q) });
+  const [turns, setTurns] = useState([]);
+  const end = useRef(null);
+  const docs = useQuery({ queryKey: ["documents", c.id], queryFn: () => api.documents(c.id) });
+  const ask = useMutation({
+    mutationFn: (q) => api.ask(c.id, q),
+    onSuccess: (data, q) => setTurns((t) => [...t, { q, data }]),
+    onError: (error, q) => setTurns((t) => [...t, { q, error: String(error.message) }]),
+  });
+  const brief = useMutation({
+    mutationFn: () => api.brief(c.id),
+    onSuccess: (data) => setTurns((t) => [...t, { q: "Prepare a hearing brief", brief: data.brief?.markdown || data.summary }]),
+    onError: (error) => setTurns((t) => [...t, { q: "Prepare a hearing brief", error: String(error.message) }]),
+  });
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [turns.length, ask.isPending]);
+
   const suggestions = c.criminal
     ? ["What did the last order direct?", "Is the accused a first-time offender?", "What was recovered?"]
     : ["What did the last order direct?", "What relief is claimed?", "When is the written statement due?"];
   const submit = (q) => {
-    setQuestion(q);
-    if (q.trim()) ask.mutate(q.trim());
+    if (!q.trim() || ask.isPending) return;
+    setQuestion("");
+    ask.mutate(q.trim());
   };
+  const busy = ask.isPending || brief.isPending;
+
   return (
-    <div style={{ display: "grid", gap: 18, maxWidth: 780 }}>
-      <form
-        className="mn-composer"
-        onSubmit={(event) => {
-          event.preventDefault();
-          submit(question);
-        }}
-      >
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder={`Ask about ${c.title}…`}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              submit(question);
-            }
-          }}
-        />
-        <footer>
-          <span className="mn-faint" style={{ fontSize: 12.5 }}>
-            Answers only from this case's record and papers, with the page.
-          </span>
-          <button type="submit" className="mn-btn ink small" disabled={!question.trim() || ask.isPending} aria-label="Ask">
-            {ask.isPending ? "Reading…" : <ArrowUp size={16} />}
-          </button>
-        </footer>
-      </form>
-      {!ask.data && !ask.isPending ? (
-        <div className="mn-suggestions">
-          {suggestions.map((s) => (
-            <button key={s} type="button" onClick={() => submit(s)}>
-              {s}
-            </button>
+    <>
+      {turns.length || busy ? (
+        <section className="mn-part mn-thread">
+          <h2 className="mn-part-title">Asked of this case</h2>
+          {turns.map((turn, i) => (
+            <Turn key={i} turn={turn} docs={docs.data?.documents || []} openCite={openCite} />
           ))}
-        </div>
+          {busy ? (
+            <p className="mn-thinking">
+              <RefreshCw size={14} className="spin" /> Reading the record and papers…
+            </p>
+          ) : null}
+          <div ref={end} className="mn-thread-end" />
+        </section>
       ) : null}
-      {ask.error ? <p className="mn-error">{String(ask.error.message)}</p> : null}
-      {ask.data ? (
-        <>
-          {ask.data.answer ? (
-            <section className="mn-card">
-              <h3>Manu</h3>
-              <p className="mn-answer">{ask.data.answer}</p>
-              {ask.data.quotes?.length ? (
-                <ul className="mn-quotes">
-                  {ask.data.quotes.map((q) => (
-                    <li key={q.quote} className={q.verified ? "ok" : "bad"}>
-                      {q.verified ? "Quote found in " + q.source + (q.page ? `, p. ${q.page}` : "") : "Quote not found in this case's papers — do not rely on it"}
-                      <span>“{q.quote}”</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </section>
-          ) : (
-            <div className="mn-notice">
-              <strong>Manu's reader isn't connected on this installation.</strong>
-              <span className="mn-soft">
-                {ask.data.reason} Meanwhile, here is where the papers mention it.
-              </span>
-            </div>
-          )}
-          <p className="mn-kicker">Where the papers say it</p>
-          <Matches matches={ask.data.matches} onOpenPage={onOpenPage} empty="No page mentions every word of the question. Try fewer words." />
-        </>
-      ) : null}
-    </div>
+
+      <div className="mn-case-composer">
+        {!turns.length && !busy ? (
+          <div className="mn-suggestions">
+            {suggestions.map((s) => (
+              <button key={s} type="button" onClick={() => submit(s)}>
+                {s}
+              </button>
+            ))}
+            <button type="button" onClick={() => brief.mutate()}>
+              Hearing brief
+            </button>
+            <button type="button" onClick={() => openTab("dates")}>
+              List of dates
+            </button>
+          </div>
+        ) : null}
+        <form
+          className="mn-composer"
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit(question);
+          }}
+        >
+          <div className="mn-composer-line">
+            <textarea
+              rows={1}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder={`Ask ${c.title} anything — answers cite the page`}
+              aria-label="Ask about this case"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submit(question);
+                }
+              }}
+            />
+            <button type="submit" className="mn-send" disabled={!question.trim() || busy} aria-label="Ask">
+              <ArrowUp size={17} />
+            </button>
+          </div>
+          <div className="mn-composer-foot">
+            <span className="mn-chip-flat">
+              <FileText size={13} /> {plural(docs.data?.documents.length ?? 0, "paper")} · {plural(c.orders.length, "order")}
+            </span>
+            <button type="button" className="mn-chip-flat link" onClick={() => openTab("papers")}>
+              Add papers
+            </button>
+            <span className="mn-composer-hint">Only this case's record</span>
+          </div>
+        </form>
+      </div>
+    </>
   );
 }
 
-/* -- list of dates ------------------------------------------------------------------ */
-
-function Dates({ caseId }) {
-  const query = useQuery({ queryKey: ["dates", caseId], queryFn: () => api.dates(caseId) });
+function Turn({ turn, docs, openCite }) {
+  const cites = turn.data?.answer ? answerCites(turn.data.quotes, docs) : [];
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <div className="mn-head">
-        <div>
-          <p className="mn-kicker">Built from the record · every row has its source</p>
-          <h2>List of dates and events</h2>
-        </div>
-        <a className="mn-btn ink" href={api.datesDocxUrl(caseId)}>
-          <Download size={15} /> Download .docx
-        </a>
-      </div>
-      <Loading query={query} empty={query.data && !query.data.rows.length ? "Nothing on record yet." : null}>
-        <table className="mn-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Event</th>
-              <th>Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(query.data?.rows || []).map((row, i) => (
-              <tr key={`${row.date}-${i}`}>
-                <td>{row.display}</td>
-                <td>{row.event}</td>
-                <td>{row.source}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Loading>
-      <p className="mn-footnote">Advocate review required before filing.</p>
+    <div className="mn-turn">
+      <p className="mn-turn-q">{turn.q}</p>
+      {turn.error ? <p className="mn-error">{turn.error}</p> : null}
+      {turn.brief ? <div className="mn-answer">{turn.brief}</div> : null}
+      {turn.data?.answer ? (
+        <>
+          <div className="mn-answer">{turn.data.answer}</div>
+          {cites.length ? (
+            <ul className="mn-quotes">
+              {cites.map((cite, i) => (
+                <li key={`${cite.quote}-${i}`} className={cite.verification === "missing" ? "bad" : ""}>
+                  <CitePill
+                    n={i + 1}
+                    verification={cite.verification}
+                    label={cite.label}
+                    onClick={() => (cite.kind === "none" ? null : openCite(cites.filter((x) => x.kind !== "none"), cites.filter((x) => x.kind !== "none").indexOf(cite)))}
+                  />
+                  <span>
+                    “{cite.quote}”
+                    <small>{cite.verification === "missing" ? "Not found in this case's papers — do not rely on it" : cite.label}</small>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      ) : null}
+      {turn.data && !turn.data.answer ? (
+        <p className="mn-offline">
+          The reader isn't connected here ({turn.data.reason.replace(/\.$/, "")}). This is where the papers say it:
+        </p>
+      ) : null}
+      {turn.data ? (
+        <MatchList matches={turn.data.matches} openCite={openCite} empty="No page mentions every word of the question. Try fewer words." />
+      ) : null}
     </div>
   );
 }

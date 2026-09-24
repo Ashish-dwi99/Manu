@@ -28,8 +28,6 @@ from manu.law import default_bail, s479
 from manu.law.offences import OFFENCES
 from manu.watcher import CourtWatcher
 
-Lens = Literal["advocate", "judge"]
-
 
 class TrackRequest(BaseModel):
     cnr: str = Field(min_length=16, max_length=24)
@@ -80,8 +78,8 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
         return {"ok": True, "cases": len(store.all()), "offence_rows": len(OFFENCES)}
 
     @app.get("/api/diary/day")
-    def diary_day(on: str | None = None, lens: Lens = "advocate") -> dict:
-        return diary.day(store, as_of(on), lens=lens)
+    def diary_day(on: str | None = None) -> dict:
+        return diary.day(store, as_of(on))
 
     @app.get("/api/diary/upcoming")
     def diary_upcoming(on: str | None = None, days: int = 7) -> dict:
@@ -92,9 +90,9 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
         return diary.changes(store, limit=max(1, min(limit, 500)))
 
     @app.get("/api/cases")
-    def cases(on: str | None = None, lens: Lens = "advocate") -> dict:
+    def cases(on: str | None = None) -> dict:
         day = as_of(on)
-        return {"cases": [diary._summary(c, day, lens) for c in store.all()]}
+        return {"cases": [diary._summary(c, day) for c in store.all()]}
 
     @app.post("/api/cases")
     def track(request: TrackRequest) -> dict:
@@ -105,11 +103,18 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
         return {"case_id": case.id, "events": [diary._event(e) for e in events]}
 
     @app.get("/api/cases/{case_id}")
-    def case_detail(case_id: str, on: str | None = None, lens: Lens = "advocate") -> dict:
-        detail = diary.case_detail(store, case_id, as_of(on), lens=lens)
+    def case_detail(case_id: str, on: str | None = None) -> dict:
+        detail = diary.case_detail(store, case_id, as_of(on))
         if detail is None:
             raise HTTPException(404, "case not found")
         return detail
+
+    @app.get("/api/cases/{case_id}/orders/{on}")
+    def order(case_id: str, on: str) -> dict:
+        found = diary.order_text(store, case_id, as_of(on))
+        if found is None:
+            raise HTTPException(404, "order not found")
+        return found
 
     @app.post("/api/cases/{case_id}/obligations/{obligation_id}")
     def obligation_status(case_id: str, obligation_id: str, request: ObligationStatusRequest) -> dict:

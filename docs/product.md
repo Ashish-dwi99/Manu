@@ -34,9 +34,11 @@ and what you have to do, with the source.**
    runtime, quoting the order word for word. A person confirms, completes or dismisses each one.
 4. **The diary**: today's list, what changed, what's due in the next 14 days, one page per
    case.
-5. **Judge lens**: 479 ALERT / URGENT / BAIL / WOMAN / JUVENILE / DATA GAP labels, Section
+5. **Liberty, for everyone**: 479 ALERT / URGENT / BAIL / WOMAN / JUVENILE / DATA GAP labels, Section
    479 and default-bail status with the working, and the six bail facts, each with a source
-   or a gap. Never a recommendation.
+   or a gap, on the same case page an advocate and a judge both use. Never a recommendation.
+6. **Every line cites its words**: a numbered source on each fact opens the order or page
+   at the quoted words, highlighted, and says whether they were found.
 
 ## What v1 deliberately does not do
 

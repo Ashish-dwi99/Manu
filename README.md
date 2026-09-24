@@ -16,20 +16,20 @@ failing which the SHO shall remain present in person.
                                    Source: order dated 23.09.2026 · [Confirm] [Done]
 ```
 
-One product, one record, two lenses:
+One product, one record, one view. An advocate, a firm and a judge use the same case OS:
+add a CNR and Manu gives you everything the record holds. Nobody switches modes.
 
-| | Advocate / firm | Judge |
-| --- | --- | --- |
-| **Diary** | My cases listed today, what each is listed for, last order, what's due | Today's cause list |
-| **What changed** | New orders, moved dates, directions found | same |
-| **Due** | Directions and hearings in the next 14 days | same |
-| **Case** | Last order, directions with source, timeline | + Section 479 BNSS and default-bail arithmetic with working, bail facts (never a recommendation) |
-| **Papers** | Upload PDF/Word/text; search papers and orders, answered with file + page + quote | same |
-| **Ask this case** | Questions answered only from the record and papers on the Chotu runtime; every quotation checked against the papers | same |
-| **List of dates** | Chronology from the record, each row sourced, downloadable as .docx | same |
+| Screen | What it shows |
+| --- | --- |
+| **Today** | One box: paste a CNR to follow a case, or find one of yours. Below it, what is listed today (the diary and the cause list are the same list), and what needs you: liberty dates and directions due |
+| **This week** | Hearings and directions for the next seven days, by day |
+| **What changed** | New orders, moved dates, directions found, each with its source |
+| **Case** | Next hearing, last order, what somebody has to do, and for criminal matters the s.479 BNSS and default-bail arithmetic with the working and the six bail facts (never a recommendation). Ask the case anything underneath |
+| **Source panel** | Every line on a case carries a numbered source. Clicking it opens the order or page at those words, highlighted, with whether the words are really there. Papers, list of dates (.docx) and timeline live in the same panel |
 
-The interface uses Tura's design language: warm paper on a ruled pastel ground, Source
-Serif 4 and IBM Plex Sans, a terracotta accent, light and dark.
+The interface follows the Chotu workspace (root): floating sheets on a hatched ground,
+Geist for working text, Geist Mono for what you copy, Source Serif 4 for the court's own
+words, light and dark.
 
 ## Quick start
 
@@ -63,7 +63,7 @@ cd apps/web && npm test && npm run build
                     │
    ┌────────────────┼──────────────────────────┐
    │                │                          │
- diary          watcher ── connectors ladder   judge lens
+ diary          watcher ── connectors ladder   liberty labels
  (views)        (fetch → diff → events)        (labels, bail facts)
    │                │                          │
    └──────── case_state (SQLite: cases, append-only events, snapshots)

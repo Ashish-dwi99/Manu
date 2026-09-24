@@ -1,30 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
-  BookOpen,
   CalendarDays,
   ChevronDown,
-  Gavel,
+  ChevronRight,
+  Folder,
+  FolderOpen,
   ListChecks,
+  Menu,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   RefreshCw,
-  Scale,
+  SquarePen,
   Sun,
-  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api } from "./api.js";
-import { countdown, formatDate, indiaDateKey } from "./model.js";
+import { countdown, formatDate, groupByCourt, indiaDateKey } from "./model.js";
 import { CaseView } from "./views/CaseView.jsx";
 import { HomeView } from "./views/HomeView.jsx";
-import { ChangesView, DueView } from "./views/Lists.jsx";
-
-const LENSES = {
-  advocate: { icon: Scale, title: "Advocate's diary", hint: "Your cases, what changed, what's due" },
-  judge: { icon: Gavel, title: "Judge's desk", hint: "Cause list, liberty, bail facts" },
-};
+import { ChangesView, WeekView } from "./views/Lists.jsx";
+import { Mark, navigate } from "./views/common.jsx";
 
 function readPref(key, fallback) {
   try {
@@ -42,102 +41,128 @@ function writePref(key, value) {
   }
 }
 
+/** Routes live in the hash, so the browser's back button walks the diary. */
+function parseRoute(hash) {
+  const parts = String(hash || "").replace(/^#\/?/, "").split("/").filter(Boolean);
+  if (parts[0] === "c" && parts[1]) return { view: "case", id: parts[1] };
+  if (parts[0] === "week") return { view: "week" };
+  if (parts[0] === "changes") return { view: "changes" };
+  return { view: "today" };
+}
+
 export function App() {
   const today = indiaDateKey();
-  const [section, setSection] = useState("home");
-  const [lens, setLens] = useState(() => readPref("manu.lens", "advocate"));
+  const [route, setRoute] = useState(() => parseRoute(window.location.hash));
   const [theme, setTheme] = useState(() => readPref("manu.theme", "light"));
-  const [day, setDay] = useState(today);
-  const [openCase, setOpenCase] = useState(null);
-  const [adding, setAdding] = useState(false);
-  const [lensOpen, setLensOpen] = useState(false);
+  const [railOpen, setRailOpen] = useState(() => readPref("manu.rail", "open") === "open");
+  const [phoneRail, setPhoneRail] = useState(false);
+  const [composerFocus, setComposerFocus] = useState(0);
+  const [collapsed, setCollapsed] = useState(() => new Set());
   const queryClient = useQueryClient();
 
-  useEffect(() => writePref("manu.lens", lens), [lens]);
+  useEffect(() => {
+    const onHash = () => {
+      setRoute(parseRoute(window.location.hash));
+      setPhoneRail(false);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
   useEffect(() => writePref("manu.theme", theme), [theme]);
+  useEffect(() => writePref("manu.rail", railOpen ? "open" : "closed"), [railOpen]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
-  const cases = useQuery({ queryKey: ["cases", today, lens], queryFn: () => api.cases(today, lens) });
+  const cases = useQuery({ queryKey: ["cases", today], queryFn: () => api.cases(today) });
   const changes = useQuery({ queryKey: ["changes"], queryFn: api.changes });
   const upcoming = useQuery({ queryKey: ["upcoming", today], queryFn: () => api.upcoming(today) });
   const watch = useMutation({ mutationFn: api.watch, onSuccess: () => queryClient.invalidateQueries() });
 
   const changeCount = (changes.data?.events || []).filter((e) => e.kind !== "tracked").length;
   const dueCount = (upcoming.data?.items || []).filter((i) => i.kind !== "hearing").length;
-  const go = (next) => {
-    setSection(next);
-    setOpenCase(null);
+  const courts = groupByCourt(cases.data?.cases);
+  const followCase = () => {
+    navigate("/");
+    setComposerFocus((n) => n + 1);
   };
-  const Lens = LENSES[lens];
-  const shared = { lens, today, onOpenCase: setOpenCase, go };
+  const toggleCourt = (court) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(court)) next.delete(court);
+      else next.add(court);
+      return next;
+    });
+
+  const shared = { today, cases, changes, upcoming };
 
   return (
-    <div className={`mn ${theme === "dark" ? "dark" : ""}`}>
-      <aside className="mn-rail">
+    <div className={`mn ${theme === "dark" ? "dark" : ""} ${railOpen ? "" : "rail-closed"} ${phoneRail ? "phone-rail" : ""}`}>
+      <aside className="mn-rail" aria-label="Manu">
         <div className="mn-brand">
-          <strong>manu</strong>
-          <small>{lens === "judge" ? "for the bench" : "for advocates"}</small>
-        </div>
-
-        <div className="mn-lens">
-          <button type="button" aria-haspopup="menu" aria-expanded={lensOpen} onClick={() => setLensOpen(!lensOpen)}>
-            <Lens.icon size={17} />
-            <span>
-              {Lens.title}
-              <small>{Lens.hint}</small>
-            </span>
-            <ChevronDown size={16} />
+          <a href="#/" className="mn-logo" aria-label="Manu, today">
+            <Mark />
+            <strong>manu</strong>
+          </a>
+          <button type="button" className="mn-icon ghost" aria-label="Hide sidebar" onClick={() => setRailOpen(false)}>
+            <PanelLeftClose size={17} />
           </button>
-          {lensOpen ? (
-            <div className="mn-lens-menu" role="menu">
-              {Object.entries(LENSES).map(([id, item]) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={lens === id}
-                  onClick={() => {
-                    setLens(id);
-                    setLensOpen(false);
-                  }}
-                >
-                  <item.icon size={17} />
-                  <span>
-                    {item.title}
-                    <small>{item.hint}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : null}
         </div>
 
-        <button type="button" className="mn-new" onClick={() => setAdding(true)}>
-          <Plus size={18} /> <span>Follow a case</span>
-        </button>
-
-        <nav aria-label="Manu">
-          <NavItem
-            icon={CalendarDays}
-            label={lens === "judge" ? "Cause list" : "Today"}
-            on={section === "home" && !openCase}
-            onClick={() => go("home")}
-          />
-          <NavItem icon={Bell} label="What changed" count={changeCount} on={section === "changes" && !openCase} onClick={() => go("changes")} />
-          <NavItem icon={ListChecks} label="Due this week" count={dueCount} on={section === "due" && !openCase} onClick={() => go("due")} />
+        <nav className="mn-nav-list">
+          <button type="button" className="mn-nav primary" onClick={followCase}>
+            <SquarePen size={17} />
+            <span>Follow a case</span>
+          </button>
+          <NavLink href="#/" icon={CalendarDays} label="Today" on={route.view === "today"} />
+          <NavLink href="#/week" icon={ListChecks} label="This week" count={dueCount} on={route.view === "week"} />
+          <NavLink href="#/changes" icon={Bell} label="What changed" count={changeCount} on={route.view === "changes"} />
         </nav>
 
         <div className="mn-rail-section">
-          <span>Cases</span>
-          <span>{cases.data?.cases.length ?? ""}</span>
+          <span>Courts</span>
+          <span className="mn-rail-section-tools">
+            <span>{cases.data?.cases.length ?? ""}</span>
+            <button type="button" className="mn-icon ghost tiny" aria-label="Follow a case" onClick={followCase}>
+              <Plus size={15} />
+            </button>
+          </span>
         </div>
-        {[...(cases.data?.cases || [])].sort((a, b) => (a.next_date || "9999").localeCompare(b.next_date || "9999")).map((c) => (
-          <button key={c.id} type="button" className={`mn-case-link ${openCase === c.id ? "on" : ""}`} onClick={() => setOpenCase(c.id)}>
-            <span>{c.title}</span>
-            <small>
-              {c.next_date ? `${formatDate(c.next_date)} · ${countdown(c.next_date, today)}` : c.stage === "disposed" ? "Disposed" : "No date yet"}
-            </small>
-          </button>
-        ))}
+        <div className="mn-tree">
+          {courts.map((group) => {
+            const shut = collapsed.has(group.court);
+            return (
+              <div key={group.court} className="mn-tree-group">
+                <button type="button" className="mn-tree-court" aria-expanded={!shut} onClick={() => toggleCourt(group.court)}>
+                  {shut ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                  {shut ? <Folder size={15} /> : <FolderOpen size={15} />}
+                  <span>{group.court}</span>
+                  <small>{group.cases.length}</small>
+                </button>
+                {shut ? null : (
+                  <div className="mn-tree-cases">
+                    {group.cases.map((c) => (
+                      <a
+                        key={c.id}
+                        href={`#/c/${c.id}`}
+                        className={`mn-tree-case ${route.id === c.id ? "on" : ""}`}
+                        aria-current={route.id === c.id ? "page" : undefined}
+                      >
+                        <span>
+                          {c.labels?.some((l) => l.code === "479 ALERT" || l.code === "URGENT") ? <i className="mn-dot red" aria-label="Liberty at stake" /> : null}
+                          {c.title}
+                        </span>
+                        <small>
+                          {c.next_date ? `${formatDate(c.next_date)} · ${countdown(c.next_date, today)}` : c.stage === "disposed" ? "Disposed" : "No date yet"}
+                        </small>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
         <div className="mn-rail-foot">
           <button type="button" className="mn-nav" onClick={() => watch.mutate()} disabled={watch.isPending}>
@@ -154,94 +179,42 @@ export function App() {
             {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
             <span>{theme === "dark" ? "Light" : "Dark"}</span>
           </button>
-          <a className="mn-nav" href="https://github.com/Ashish-dwi99/Manu" target="_blank" rel="noreferrer">
-            <BookOpen size={17} />
-            <span>About Manu</span>
-          </a>
         </div>
       </aside>
 
-      <main className="mn-page">
-        {openCase ? (
-          <CaseView key={openCase} caseId={openCase} onBack={() => setOpenCase(null)} {...shared} />
-        ) : section === "changes" ? (
-          <ChangesView query={changes} {...shared} />
-        ) : section === "due" ? (
-          <DueView query={upcoming} {...shared} />
+      <div className="mn-rail-scrim" onClick={() => setPhoneRail(false)} aria-hidden="true" />
+
+      <main className="mn-stage">
+        <div className="mn-stage-tools">
+          {!railOpen ? (
+            <button type="button" className="mn-icon ghost wide-only" aria-label="Show sidebar" onClick={() => setRailOpen(true)}>
+              <PanelLeftOpen size={17} />
+            </button>
+          ) : null}
+          <button type="button" className="mn-icon ghost phone-only" aria-label="Open menu" onClick={() => setPhoneRail(true)}>
+            <Menu size={18} />
+          </button>
+        </div>
+        {route.view === "case" ? (
+          <CaseView key={route.id} caseId={route.id} {...shared} />
+        ) : route.view === "changes" ? (
+          <ChangesView {...shared} />
+        ) : route.view === "week" ? (
+          <WeekView {...shared} />
         ) : (
-          <HomeView day={day} setDay={setDay} changeCount={changeCount} dueCount={dueCount} {...shared} />
+          <HomeView focusSignal={composerFocus} changeCount={changeCount} dueCount={dueCount} {...shared} />
         )}
       </main>
-
-      {adding ? <FollowCase onClose={() => setAdding(false)} onOpenCase={setOpenCase} /> : null}
     </div>
   );
 }
 
-function NavItem({ icon: Icon, label, count, on, onClick }) {
+function NavLink({ href, icon: Icon, label, count, on }) {
   return (
-    <button type="button" className={`mn-nav ${on ? "on" : ""}`} aria-current={on ? "page" : undefined} onClick={onClick}>
+    <a href={href} className={`mn-nav ${on ? "on" : ""}`} aria-current={on ? "page" : undefined}>
       <Icon size={17} />
       <span>{label}</span>
       {count ? <span className="count">{count}</span> : null}
-    </button>
-  );
-}
-
-function FollowCase({ onClose, onOpenCase }) {
-  const [cnr, setCnr] = useState("");
-  const queryClient = useQueryClient();
-  const track = useMutation({
-    mutationFn: () => api.track(cnr),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries();
-      onClose();
-      onOpenCase(result.case_id);
-    },
-  });
-  return (
-    <div className="mn-scrim" role="presentation" onMouseDown={onClose}>
-      <form
-        className="mn-dialog"
-        role="dialog"
-        aria-labelledby="follow-title"
-        onMouseDown={(event) => event.stopPropagation()}
-        onSubmit={(event) => {
-          event.preventDefault();
-          track.mutate();
-        }}
-      >
-        <header>
-          <h2 id="follow-title">Follow a case</h2>
-          <button type="button" className="mn-icon" aria-label="Close" onClick={onClose}>
-            <X size={16} />
-          </button>
-        </header>
-        <p className="mn-soft">
-          Enter the 16-character CNR from the case status page or any order. Manu reads the court every morning and tells you
-          what changed and what you have to do.
-        </p>
-        <label>
-          CNR
-          <input
-            autoFocus
-            value={cnr}
-            onChange={(event) => setCnr(event.target.value.toUpperCase())}
-            placeholder="DLSE010001232024"
-            maxLength={24}
-            spellCheck={false}
-          />
-        </label>
-        {track.error ? <p className="mn-error">{String(track.error.message)}</p> : null}
-        <footer>
-          <button type="button" className="mn-btn" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="mn-btn ink" disabled={cnr.replace(/-/g, "").length < 16 || track.isPending}>
-            {track.isPending ? "Reading the court…" : "Follow"}
-          </button>
-        </footer>
-      </form>
-    </div>
+    </a>
   );
 }

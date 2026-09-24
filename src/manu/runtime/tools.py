@@ -133,7 +133,7 @@ def case_tools(
         return case
 
     def case_read(_args: dict[str, Any]) -> Any:
-        return diary.case_detail(store, case_id, today, lens="advocate")
+        return diary.case_detail(store, case_id, today)
 
     def order_text(args: dict[str, Any]) -> Any:
         on = date.fromisoformat(str(args["on"]))

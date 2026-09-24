@@ -16,8 +16,8 @@ def client():
     return TestClient(create_app(store, ConnectorLadder([])))
 
 
-def test_judge_day_has_labels_and_never_a_recommendation():
-    body = client().get("/api/diary/day", params={"on": TODAY.isoformat(), "lens": "judge"}).json()
+def test_day_has_labels_for_everyone_and_never_a_recommendation():
+    body = client().get("/api/diary/day", params={"on": TODAY.isoformat()}).json()
     assert body["count"] == 3
     labels = {e["title"]: [label["code"] for label in e["labels"]] for e in body["entries"]}
     assert "URGENT" in labels["State v. Imran & Anr."]
@@ -29,12 +29,25 @@ def test_case_detail_shows_s479_working_and_bail_facts():
     c = client()
     cases = c.get("/api/cases").json()["cases"]
     aamir = next(x for x in cases if x["cnr"] == "DLSE010001232024")
-    detail = c.get(f"/api/cases/{aamir['id']}", params={"on": TODAY.isoformat(), "lens": "judge"}).json()
+    detail = c.get(f"/api/cases/{aamir['id']}", params={"on": TODAY.isoformat()}).json()
     s = detail["criminal"]["accused"][0]["s479"]
     assert s["status"] == "approaching"
     assert any("12 months" in line for line in s["working"])
     assert detail["bail_facts"]["note"].startswith("Facts only")
     assert len(detail["bail_facts"]["factors"]) == 6
+
+
+def test_an_order_can_be_read_in_full_so_a_direction_is_seen_in_place():
+    c = client()
+    cases = c.get("/api/cases").json()["cases"]
+    aamir = next(x for x in cases if x["cnr"] == "DLSE010001232024")
+    detail = c.get(f"/api/cases/{aamir['id']}").json()
+    direction = next(o for o in detail["obligations"] if "29.09.2026" in o["what"])
+    order = next(o for o in detail["orders"] if o["uri"] == direction["source"]["uri"])
+    body = c.get(f"/api/cases/{aamir['id']}/orders/{order['on']}").json()
+    assert direction["source"]["quote"] in body["text"]
+    assert body["source"]["uri"] == direction["source"]["uri"]
+    assert c.get(f"/api/cases/{aamir['id']}/orders/2001-01-01").status_code == 404
 
 
 def test_confirming_an_obligation_upgrades_its_source():
