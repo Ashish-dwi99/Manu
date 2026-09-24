@@ -519,9 +519,9 @@ body {
 }
 
 .mn-display {
-  font-size: clamp(30px, 3.6vw, 44px);
-  font-weight: 560;
-  letter-spacing: -0.045em;
+  font-size: clamp(28px, 3.2vw, 40px);
+  font-weight: 480;
+  letter-spacing: -0.03em;
   line-height: 1.1;
   margin: 0 0 30px;
   text-align: center;

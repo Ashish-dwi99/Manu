@@ -6,7 +6,7 @@ import { api } from "../api.js";
 import { asCnr, countdown, courtLabel, formatDate, formatLongDate, greeting, humanDates, shiftDay } from "../model.js";
 import { Labels, Loading, RowLink, SectionHead, navigate } from "./common.jsx";
 
-export function HomeView({ today, cases, upcoming, changeCount, dueCount, focusSignal }) {
+export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
   const [day, setDay] = useState(today);
   const [text, setText] = useState("");
   const input = useRef(null);
@@ -48,7 +48,7 @@ export function HomeView({ today, cases, upcoming, changeCount, dueCount, focusS
         <p className="mn-eyebrow">
           {greeting()} · {formatLongDate(today)}
         </p>
-        <h1 className="mn-display">{headline(isToday ? entries.length : null, dueCount)}</h1>
+        <h1 className="mn-display">{headline()}</h1>
 
         <form
           className={`mn-composer ${cnr ? "has-cnr" : ""}`}
@@ -125,7 +125,7 @@ export function HomeView({ today, cases, upcoming, changeCount, dueCount, focusS
                   </>
                 }
               >
-                {isToday ? "Listed today" : `Listed ${formatLongDate(day)}`}
+                {isToday ? `Listed today · ${entries.length}` : `Listed ${formatLongDate(day)} · ${entries.length}`}
               </SectionHead>
               <Loading query={query} empty={query.data && !entries.length ? "Nothing listed on this day." : null}>
                 <ol className="mn-rows">
@@ -166,10 +166,8 @@ export function HomeView({ today, cases, upcoming, changeCount, dueCount, focusS
   );
 }
 
-function headline(listed, due) {
-  if (listed === null) return "Your diary.";
-  if (listed === 0) return due ? "Nothing listed. Work is due." : "A clear day.";
-  return `${listed} ${listed === 1 ? "matter" : "matters"} before the court today.`;
+function headline() {
+  return "What's on the board today?";
 }
 
 /** What needs a person: liberty dates first, then directions overdue or due within 3 days. */
