@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FileText, MessageCircle, PanelRight, Radio, RefreshCw, ShieldAlert, Timer, Trash2, X } from "lucide-react";
+import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FileText, MessageCircle, PanelRight, Radio, RefreshCw, Search, ShieldAlert, Timer, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api.js";
 import { boardHeadline, countdown, courtLabel, formatDate, humanDates, plural, s479Headline, timeAgo } from "../model.js";
 import { CitePill, Labels, Loading } from "./common.jsx";
 import { DraftSheet } from "./DraftSheet.jsx";
+import { Standing } from "./Research.jsx";
 import { MatchList, SourcePanel } from "./SourcePanel.jsx";
 
 const overlayPanel = () => typeof window !== "undefined" && window.innerWidth < 1180;
@@ -105,6 +106,10 @@ export function CaseView({ caseId, today }) {
                   <LastOrder c={c} cite={citeProps("order")} onRead={() => openCite(cites, numberOf("order") - 1)} />
                   <Directions c={c} today={today} citeProps={citeProps} />
                   <Notes c={c} today={today} />
+                  <Authorities c={c} citeProps={citeProps} openResearch={() => {
+                    setPanel({ ...panel, tab: "research" });
+                    setPanelOpen(true);
+                  }} />
                   <Limitation c={c} today={today} />
                   {c.criminal ? <Liberty criminal={c.criminal} today={today} /> : null}
                   {c.bail_facts?.applicable ? <BailFacts facts={c.bail_facts} /> : null}
@@ -157,6 +162,17 @@ function caseCites(c) {
       span: o.source.span,
       verification: o.source.verification,
       label: on ? `Order dated ${formatDate(on)}` : "Order not on record",
+    });
+  }
+  for (const a of c.authorities || []) {
+    out.push({
+      key: a.id,
+      kind: "judgment",
+      source: a.source.name,
+      docId: a.source.doc_id,
+      paragraph: a.paragraph,
+      verification: a.standing === "official" || a.standing === "licensed" ? "verified" : "lead",
+      label: `${a.citation || a.title}, para ${a.paragraph}`,
     });
   }
   return out;
@@ -300,6 +316,47 @@ function Directions({ c, today, citeProps }) {
           </ul>
         </details>
       ) : null}
+    </section>
+  );
+}
+
+/* -- authorities ------------------------------------------------------------------------ */
+
+function Authorities({ c, citeProps, openResearch }) {
+  const queryClient = useQueryClient();
+  const remove = useMutation({ mutationFn: (id) => api.deleteAuthority(c.id, id), onSuccess: () => queryClient.invalidateQueries() });
+  const list = c.authorities || [];
+  return (
+    <section className="mn-part">
+      <h2 className="mn-part-title">
+        Authorities <span>· paragraphs you rely on, word for word as read</span>
+        <button type="button" className="mn-text-btn mn-part-action" onClick={openResearch}>
+          <Search size={14} /> Research
+        </button>
+      </h2>
+      {list.length ? (
+        <ul className="mn-authorities">
+          {list.map((a) => (
+            <li key={a.id}>
+              <p className="mn-auth-head">
+                <b>{a.title}</b>
+                {a.citation ? <span className="mono">{a.citation}</span> : null}
+                <span className="mono">¶{a.paragraph}</span>
+                <CitePill {...citeProps(a.id)} />
+              </p>
+              <p className="mn-auth-quote">“{a.quote}”</p>
+              <p className="mn-auth-foot">
+                <Standing standing={a.standing} />
+                <button type="button" className="mn-text-btn" onClick={() => remove.mutate(a.id)}>
+                  <Trash2 size={13} /> Remove
+                </button>
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mn-faint small">None yet. Research opens in the panel: read a judgment and rely on the paragraph you need.</p>
+      )}
     </section>
   );
 }

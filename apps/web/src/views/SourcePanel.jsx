@@ -5,10 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import { eventLabel, formatDate, humanDates, locateQuote, splitAround } from "../model.js";
 import { CitePill, Loading } from "./common.jsx";
+import { JudgmentView, ResearchTab } from "./Research.jsx";
 
 export const PANEL_TABS = [
   { id: "source", label: "Source" },
   { id: "papers", label: "Papers" },
+  { id: "research", label: "Research" },
   { id: "dates", label: "Dates" },
   { id: "timeline", label: "Timeline" },
 ];
@@ -35,6 +37,7 @@ export function SourcePanel({ c, panel, setPanel, onClose, openCite }) {
       <div className="mn-panel-body">
         {panel.tab === "source" ? <SourceTab c={c} panel={panel} setPanel={setPanel} /> : null}
         {panel.tab === "papers" ? <PapersTab caseId={c.id} openCite={openCite} /> : null}
+        {panel.tab === "research" ? <ResearchTab c={c} /> : null}
         {panel.tab === "dates" ? <DatesTab caseId={c.id} /> : null}
         {panel.tab === "timeline" ? <TimelineTab c={c} /> : null}
       </div>
@@ -73,6 +76,9 @@ function SourceTab({ c, panel, setPanel }) {
       {cite.kind === "order" ? <OrderSource key={`${cite.on}:${cite.quote}`} caseId={c.id} cite={cite} /> : null}
       {cite.kind === "doc" ? <PageSource key={`${cite.docId}:${cite.page}:${cite.quote}`} cite={cite} /> : null}
       {cite.kind === "working" ? <WorkingSource cite={cite} /> : null}
+      {cite.kind === "judgment" ? (
+        <JudgmentView key={`${cite.docId}:${cite.paragraph}`} caseId={c.id} source={cite.source} docId={cite.docId} focus={cite.paragraph} relied={c.authorities} />
+      ) : null}
     </div>
   );
 }

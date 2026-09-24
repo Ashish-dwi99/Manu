@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from manu import judge
-from manu.case_state.models import Case, CaseEvent, Client, Note, Obligation, SourceRef
+from manu.case_state.models import Authority, Case, CaseEvent, Client, Note, Obligation, SourceRef
 from manu.case_state.store import CaseStore, new_id
 from manu.law import limitation
 
@@ -214,6 +214,7 @@ def case_detail(store: CaseStore, case_id: str, as_of: date) -> dict | None:
                 for o in sorted(case.orders, key=lambda o: o.on, reverse=True)
             ],
             "client": _client(case),
+            "authorities": [_authority(a) for a in case.authorities],
             "notes": [_note(n) for n in sorted(case.notes, key=lambda n: (n.on, n.created_at), reverse=True)],
             "timeline": _timeline(case),
             "events": [_event(e) for e in store.events(case.id, limit=50)],
@@ -495,3 +496,67 @@ def boards(store: CaseStore, ladder, on: date) -> dict:
 def _number(item: str) -> int | None:
     digits = "".join(ch for ch in item or "" if ch.isdigit())
     return int(digits) if digits else None
+
+
+# -- authorities ------------------------------------------------------------------------
+
+
+def _authority(a: Authority) -> dict:
+    return {
+        "id": a.id,
+        "citation": a.citation,
+        "title": a.title,
+        "court": a.court,
+        "decided_on": a.decided_on.isoformat() if a.decided_on else None,
+        "paragraph": a.paragraph,
+        "quote": a.quote,
+        "standing": a.standing,
+        "source": {"name": a.source.connector, "doc_id": a.doc_id, "uri": a.source.uri},
+    }
+
+
+def add_authority(store: CaseStore, case_id: str, judgment, paragraph: int) -> dict:
+    """Rely on one paragraph of a judgment in this case. The paragraph is stored as read
+    from the source, so what is cited later is exactly what was read."""
+    case = store.get(case_id)
+    if case is None:
+        raise ValueError("case not found")
+    if not 1 <= paragraph <= len(judgment.paragraphs):
+        raise ValueError(f"The judgment has {len(judgment.paragraphs)} paragraphs; there is no paragraph {paragraph}.")
+    for existing in case.authorities:
+        if existing.doc_id == judgment.doc_id and existing.paragraph == paragraph:
+            return _authority(existing)
+    text = judgment.paragraphs[paragraph - 1]
+    authority = Authority(
+        id=new_id("auth"),
+        citation=judgment.citations[0] if judgment.citations else "",
+        title=judgment.title,
+        court=judgment.court,
+        decided_on=judgment.decided_on,
+        paragraph=paragraph,
+        quote=text,
+        standing=judgment.standing,
+        doc_id=judgment.doc_id,
+        source=SourceRef(
+            kind="judgment",
+            connector=judgment.source,
+            uri=judgment.uri,
+            quote=text[:400],
+            verification="verified" if judgment.standing in ("official", "licensed") else "lead",
+        ),
+    )
+    case.authorities.append(authority)
+    store.put(case)
+    return _authority(authority)
+
+
+def delete_authority(store: CaseStore, case_id: str, authority_id: str) -> bool:
+    case = store.get(case_id)
+    if case is None:
+        return False
+    kept = [a for a in case.authorities if a.id != authority_id]
+    if len(kept) == len(case.authorities):
+        return False
+    case.authorities = kept
+    store.put(case)
+    return True

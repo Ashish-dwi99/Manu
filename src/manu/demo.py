@@ -45,6 +45,14 @@ def seed_documents(store: CaseStore, fixtures: Path = FIXTURES) -> None:
             documents.add(case.id, path.name, path.read_bytes())
 
 
+def demo_research_ladder():
+    """The live research ladder plus the fictional demo library, labelled `demo`."""
+    from manu.research import LibrarySource, ResearchLadder, default_research_ladder
+
+    live = default_research_ladder()
+    return ResearchLadder([LibrarySource(FIXTURES / "judgments", name="demo_library", standing="demo"), *live.sources])
+
+
 def demo_ladder(today: date | None = None, fixtures: Path = FIXTURES) -> ConnectorLadder:
     """The live ladder plus the demo court, so "Check courts now" works in the demo."""
     from manu.api import default_ladder

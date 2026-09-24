@@ -30,13 +30,14 @@ def main(argv: list[str] | None = None) -> int:
         from manu.api import create_app
 
         store = CaseStore(":memory:" if args.demo else args.db)
-        ladder = None
+        ladder = research = None
         if args.demo:
-            from manu.demo import demo_ladder, seed
+            from manu.demo import demo_ladder, demo_research_ladder, seed
 
             seed(store)
             ladder = demo_ladder()
-        uvicorn.run(create_app(store, ladder), host=args.host, port=args.port)
+            research = demo_research_ladder()
+        uvicorn.run(create_app(store, ladder, research), host=args.host, port=args.port)
         return 0
 
     store = CaseStore(args.db)

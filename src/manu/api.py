@@ -27,6 +27,7 @@ from manu.doc_intel import grammars
 from manu.documents import DocumentError, DocumentStore
 from manu.law import default_bail, limitation, s479
 from manu.law.offences import OFFENCES
+from manu.research import ResearchLadder, check_citations, default_research_ladder
 from manu.watcher import CourtWatcher
 
 
@@ -43,6 +44,16 @@ class NoteRequest(BaseModel):
 
 class ClientRequest(BaseModel):
     name: str = Field(default="", max_length=160)
+
+
+class CheckRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=100_000)
+
+
+class AuthorityRequest(BaseModel):
+    source: str
+    doc_id: str
+    paragraph: int = Field(ge=1)
 
 
 class ImportRequest(BaseModel):
@@ -74,7 +85,9 @@ def default_ladder() -> ConnectorLadder:
     return ConnectorLadder(connectors)
 
 
-def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = None) -> FastAPI:
+def create_app(
+    store: CaseStore | None = None, ladder: ConnectorLadder | None = None, research: ResearchLadder | None = None
+) -> FastAPI:
     store = store or CaseStore(os.getenv("MANU_DB", "manu.sqlite3"))
     watcher = CourtWatcher(store, ladder or default_ladder())
     app = FastAPI(title="Manu", version="0.1.0")
@@ -82,6 +95,7 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
     app.state.watcher = watcher
     documents = DocumentStore(store)
     app.state.documents = documents
+    research = research or default_research_ladder()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -180,6 +194,80 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
     @app.get("/api/cases/{case_id}/messages/client-update")
     def message_client_update(case_id: str, on: str | None = None) -> dict:
         return messages.client_update(need_case(case_id), as_of(on))
+
+    # -- research -------------------------------------------------------------------------
+
+    @app.get("/api/research/search")
+    def research_search(q: str) -> dict:
+        if len(q.strip()) < 3:
+            raise HTTPException(400, "Search for at least three letters.")
+        hits, attempts = research.search(q.strip(), limit=12)
+        return {
+            "query": q,
+            "hits": [h.as_dict() for h in hits],
+            "searched": [{"source": a.source, "outcome": a.outcome} for a in attempts],
+        }
+
+    @app.get("/api/research/judgments/{source}/{doc_id}")
+    def research_judgment(source: str, doc_id: str) -> dict:
+        judgment = research.fetch(source, doc_id)
+        if judgment is None:
+            raise HTTPException(404, "judgment not found in that source")
+        return judgment.as_dict()
+
+    @app.post("/api/research/check")
+    def research_check(request: CheckRequest) -> dict:
+        return check_citations(request.text, research)
+
+    @app.post("/api/cases/{case_id}/authorities")
+    def add_authority(case_id: str, request: AuthorityRequest) -> dict:
+        need_case(case_id)
+        judgment = research.fetch(request.source, request.doc_id)
+        if judgment is None:
+            raise HTTPException(404, "judgment not found in that source")
+        try:
+            return diary.add_authority(store, case_id, judgment, request.paragraph)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.post("/api/cases/{case_id}/research")
+    def research_for_case(case_id: str, request: AskRequest) -> dict:
+        """The researcher agent when the runtime is connected; otherwise the search results,
+        so the advocate can read and rely on paragraphs by hand."""
+        from manu.citations import locate, quotes_in
+        from manu.runtime.agent import RuntimeUnavailable, research_case
+
+        need_case(case_id)
+        hits, attempts = research.search(request.question, limit=10)
+        fallback = {
+            "hits": [h.as_dict() for h in hits],
+            "searched": [{"source": a.source, "outcome": a.outcome} for a in attempts],
+        }
+        try:
+            run = research_case(
+                store, case_id, request.question, research=research, documents=documents, timeout_seconds=300
+            )
+        except RuntimeUnavailable as exc:
+            return {"answer": None, "runtime": "unavailable", "reason": str(exc), **fallback}
+        authorities = need_case(case_id).authorities
+        quotes = []
+        for quote in quotes_in(run.result.text):
+            found = next((a for a in authorities if locate(a.quote, quote)), None)
+            quotes.append(
+                {
+                    "quote": quote,
+                    "verified": found is not None,
+                    "source": f"{found.citation or found.title}, para {found.paragraph}" if found else None,
+                    "authority_id": found.id if found else None,
+                }
+            )
+        return {"answer": run.result.text, "runtime": "ok", "quotes": quotes, "receipts": run.receipts, **fallback}
+
+    @app.delete("/api/cases/{case_id}/authorities/{authority_id}")
+    def delete_authority(case_id: str, authority_id: str) -> dict:
+        if not diary.delete_authority(store, case_id, authority_id):
+            raise HTTPException(404, "authority not found")
+        return {"ok": True}
 
     @app.get("/api/boards")
     def boards(on: str | None = None) -> dict:

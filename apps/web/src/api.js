@@ -53,6 +53,13 @@ export const api = {
   dueUpdates: (on) => request(`/api/messages/due?on=${on}`),
   clientUpdate: (caseId, on) => request(`/api/cases/${caseId}/messages/client-update?on=${on}`),
   setClient: (caseId, name) => request(`/api/cases/${caseId}/client`, json("PUT", { name })),
+  researchSearch: (q) => request(`/api/research/search?q=${encodeURIComponent(q)}`),
+  judgment: (source, docId) => request(`/api/research/judgments/${encodeURIComponent(source)}/${encodeURIComponent(docId)}`),
+  checkCitations: (text) => request(`/api/research/check`, json("POST", { text })),
+  research: (caseId, question) => request(`/api/cases/${caseId}/research`, json("POST", { question })),
+  addAuthority: (caseId, source, docId, paragraph) =>
+    request(`/api/cases/${caseId}/authorities`, json("POST", { source, doc_id: docId, paragraph })),
+  deleteAuthority: (caseId, id) => request(`/api/cases/${caseId}/authorities/${id}`, { method: "DELETE" }),
   brief: (caseId) => request(`/api/cases/${caseId}/brief`, json("POST")),
   ask: (caseId, question) => request(`/api/cases/${caseId}/ask`, json("POST", { question })),
 };

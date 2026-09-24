@@ -23,7 +23,7 @@ def utc_now() -> datetime:
 class SourceRef(BaseModel):
     """Where one fact came from, precise enough to click through to it."""
 
-    kind: Literal["court_record", "order", "upload", "human"]
+    kind: Literal["court_record", "order", "upload", "human", "judgment"]
     connector: str = ""
     """Which connector produced it (e.g. `ecourts_api`, `fixture`, `human`)."""
     uri: str = ""
@@ -117,6 +117,24 @@ class Note(BaseModel):
     source: SourceRef
 
 
+class Authority(BaseModel):
+    """A judgment the advocate relies on in this case: the paragraph, word for word, as
+    read from a source whose standing is recorded (official, licensed, lead or demo)."""
+
+    id: str
+    citation: str = ""
+    title: str
+    court: str = ""
+    decided_on: date | None = None
+    paragraph: int
+    quote: str
+    """The paragraph's own words, as read. Never a paraphrase."""
+    standing: Literal["official", "licensed", "lead", "demo"]
+    doc_id: str
+    source: SourceRef
+    added_at: datetime = Field(default_factory=utc_now)
+
+
 class Client(BaseModel):
     """Who the advocate reports to on this case. Entered by a person; Manu uses it only
     to address a draft it never sends."""
@@ -176,6 +194,7 @@ class Case(BaseModel):
     """Position on the cause list for `listing.on`, when a connector carries it."""
     notes: list[Note] = Field(default_factory=list)
     client: Client | None = None
+    authorities: list[Authority] = Field(default_factory=list)
     tracked_by: list[str] = Field(default_factory=list)
     """Who follows this case: advocate ids, a court id, a client."""
     updated_at: datetime = Field(default_factory=utc_now)

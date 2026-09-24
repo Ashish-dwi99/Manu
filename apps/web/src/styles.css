@@ -2598,3 +2598,220 @@ p.small {
   right: 16px;
   top: 16px;
 }
+
+/* -- research ----------------------------------------------------------------------------- */
+
+.mn-standing {
+  border-radius: 6px;
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 500;
+  justify-self: start;
+  padding: 1px 7px;
+}
+
+.mn-standing.ok {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.mn-standing.lead {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.mn-standing.demo {
+  background: var(--selected);
+  color: var(--ink-soft);
+}
+
+.mn-hits {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mn-hit-title {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.mn-judgment {
+  display: grid;
+  gap: 14px;
+}
+
+.mn-judgment .mn-source-head {
+  display: grid;
+  gap: 4px;
+}
+
+.mn-paras {
+  display: grid;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mn-paras li {
+  border-radius: 12px;
+  display: grid;
+  gap: 6px 10px;
+  grid-template-columns: 26px minmax(0, 1fr);
+  padding: 10px 10px 10px 4px;
+}
+
+.mn-paras li.focus {
+  background: var(--highlight);
+}
+
+.mn-paras p {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.mn-para-n {
+  color: var(--ink-faint);
+  padding-top: 3px;
+  text-align: right;
+}
+
+.mn-paras .mn-btn {
+  grid-column: 2;
+  justify-self: start;
+  opacity: 0.6;
+}
+
+.mn-paras li:hover .mn-btn,
+.mn-paras li.focus .mn-btn,
+.mn-paras .mn-btn.done {
+  opacity: 1;
+}
+
+.mn-btn.done {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.mn-research-answer {
+  font-size: 14.5px;
+}
+
+.mn-check summary {
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 13.5px;
+  margin-top: 6px;
+}
+
+.mn-check[open] {
+  display: grid;
+  gap: 8px;
+}
+
+.mn-check textarea {
+  width: 100%;
+  background: var(--sheet);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.mn-check .mn-btn {
+  justify-self: start;
+}
+
+.mn-checks {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mn-checks li {
+  align-items: center;
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13px;
+  gap: 6px 8px;
+  padding: 6px 10px;
+}
+
+.mn-checks li.ok {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.mn-checks li.lead,
+.mn-checks li.demo {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.mn-checks li.bad {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.mn-part-title .mn-part-action {
+  float: right;
+  font-weight: 400;
+  margin-top: -3px;
+}
+
+.mn-authorities {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mn-authorities li {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.mn-auth-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.mn-auth-head .mono {
+  color: var(--ink-soft);
+}
+
+.mn-auth-quote {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  color: var(--ink-soft);
+  display: -webkit-box;
+  font-family: var(--serif);
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin: 0;
+  overflow: hidden;
+}
+
+.mn-auth-foot {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+}
