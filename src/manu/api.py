@@ -7,13 +7,15 @@ from datetime import date
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from manu import diary
+from manu import diary, list_of_dates
 from manu.case_state.store import CaseStore
+from manu.citations import verify_answer
 from manu.connectors import (
     BrowserPortalConnector,
     ConnectorLadder,
@@ -21,6 +23,7 @@ from manu.connectors import (
     FixtureConnector,
 )
 from manu.doc_intel import grammars
+from manu.documents import DocumentError, DocumentStore
 from manu.law import default_bail, s479
 from manu.law.offences import OFFENCES
 from manu.watcher import CourtWatcher
@@ -31,6 +34,10 @@ Lens = Literal["advocate", "judge"]
 class TrackRequest(BaseModel):
     cnr: str = Field(min_length=16, max_length=24)
     tracked_by: str = Field(default="", max_length=160)
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=2, max_length=2000)
 
 
 class ObligationStatusRequest(BaseModel):
@@ -51,6 +58,8 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
     app = FastAPI(title="Manu", version="0.1.0")
     app.state.store = store
     app.state.watcher = watcher
+    documents = DocumentStore(store)
+    app.state.documents = documents
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -137,6 +146,112 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
                 for o in OFFENCES.values()
             ],
         }
+
+    def need_case(case_id: str):
+        case = store.get(case_id)
+        if case is None:
+            raise HTTPException(404, "case not found")
+        return case
+
+    # -- documents -------------------------------------------------------------------
+
+    @app.get("/api/cases/{case_id}/documents")
+    def list_documents(case_id: str) -> dict:
+        need_case(case_id)
+        return {"documents": [d.summary() for d in documents.for_case(case_id)]}
+
+    @app.post("/api/cases/{case_id}/documents")
+    async def upload_document(case_id: str, file: UploadFile = File(...)) -> dict:
+        need_case(case_id)
+        data = await file.read()
+        try:
+            doc = documents.add(case_id, file.filename or "document", data)
+        except DocumentError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        return doc.summary()
+
+    @app.get("/api/cases/{case_id}/search")
+    def search(case_id: str, q: str) -> dict:
+        need_case(case_id)
+        return {"query": q, "matches": documents.search(case_id, q)}
+
+    @app.get("/api/documents/{document_id}/pages/{page}")
+    def document_page(document_id: str, page: int) -> dict:
+        doc = documents.get(document_id)
+        if doc is None or not 1 <= page <= len(doc.pages):
+            raise HTTPException(404, "page not found")
+        return {"document": doc.summary(), "page": page, "text": doc.pages[page - 1]}
+
+    # -- workflows -------------------------------------------------------------------
+
+    @app.get("/api/cases/{case_id}/list-of-dates")
+    def dates(case_id: str) -> dict:
+        return {"rows": list_of_dates.rows(need_case(case_id))}
+
+    @app.get("/api/cases/{case_id}/list-of-dates.docx")
+    def dates_docx(case_id: str) -> Response:
+        case = need_case(case_id)
+        filename = f"List of dates - {case.title or case.cnr}.docx".replace('"', "")
+        return Response(
+            list_of_dates.to_docx(case),
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    @app.get("/api/runtime")
+    def runtime_status() -> dict:
+        from manu.runtime.agent import RuntimeUnavailable, kimi_binary
+
+        try:
+            kimi_binary()
+            ready = bool(os.getenv("OPENROUTER_API_KEY", "").strip())
+            reason = "" if ready else "No model key: set OPENROUTER_API_KEY."
+        except RuntimeUnavailable as exc:
+            ready, reason = False, str(exc)
+        return {"ready": ready, "reason": reason}
+
+    @app.post("/api/cases/{case_id}/ask")
+    def ask(case_id: str, request: AskRequest) -> dict:
+        """Answer from the Chotu runtime when it is connected. Without it, say so, and
+        still return the pages that match — the lawyer is never left with nothing."""
+        from manu.runtime.agent import RuntimeUnavailable, ask_case
+
+        need_case(case_id)
+        matches = documents.search(case_id, request.question)
+        try:
+            run = ask_case(store, case_id, request.question, documents=documents, timeout_seconds=180)
+        except RuntimeUnavailable as exc:
+            return {"answer": None, "runtime": "unavailable", "reason": str(exc), "matches": matches}
+        return {
+            "answer": run.result.text,
+            "runtime": "ok",
+            "status": run.result.status,
+            "receipts": run.receipts,
+            "quotes": verify_answer(documents, case_id, run.result.text),
+            "matches": matches,
+        }
+
+    @app.post("/api/cases/{case_id}/brief")
+    def brief(case_id: str) -> dict:
+        from manu.runtime.agent import RuntimeUnavailable, prepare_hearing_brief
+
+        need_case(case_id)
+        try:
+            run = prepare_hearing_brief(store, case_id, documents=documents, timeout_seconds=300)
+        except RuntimeUnavailable as exc:
+            raise HTTPException(503, str(exc)) from exc
+        return {"status": run.result.status, "summary": run.result.text, "brief": latest_brief(case_id)}
+
+    @app.get("/api/cases/{case_id}/brief")
+    def get_brief(case_id: str) -> dict:
+        need_case(case_id)
+        return {"brief": latest_brief(case_id)}
+
+    def latest_brief(case_id: str) -> dict | None:
+        for event in store.events(case_id, limit=200):
+            if event.kind == "brief_prepared":
+                return {"at": event.at.isoformat(), "markdown": event.after}
+        return None
 
     web_dist = Path(os.getenv("MANU_WEB_DIST", Path(__file__).resolve().parents[2] / "apps" / "web" / "dist"))
     if web_dist.is_dir():

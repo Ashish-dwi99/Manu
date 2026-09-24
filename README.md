@@ -24,6 +24,12 @@ One product, one record, two lenses:
 | **What changed** | New orders, moved dates, directions found | same |
 | **Due** | Directions and hearings in the next 14 days | same |
 | **Case** | Last order, directions with source, timeline | + Section 479 BNSS and default-bail arithmetic with working, bail facts (never a recommendation) |
+| **Papers** | Upload PDF/Word/text; search papers and orders, answered with file + page + quote | same |
+| **Ask this case** | Questions answered only from the record and papers on the Chotu runtime; every quotation checked against the papers | same |
+| **List of dates** | Chronology from the record, each row sourced, downloadable as .docx | same |
+
+The interface uses Tura's design language: warm paper on a ruled pastel ground, Source
+Serif 4 and IBM Plex Sans, a terracotta accent, light and dark.
 
 ## Quick start
 

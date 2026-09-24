@@ -53,7 +53,9 @@ def kimi_binary() -> str:
         return configured
     found = shutil.which("kimi-agent")
     if not found:
-        raise RuntimeUnavailable("kimi-agent not found: build it from Chotu and set MANU_KIMI_AGENT_BIN")
+        raise RuntimeUnavailable(
+            "The Chotu runtime (kimi-agent) is not installed: build it and set MANU_KIMI_AGENT_BIN."
+        )
     return found
 
 
@@ -106,7 +108,7 @@ def run_agent(
         raise RuntimeUnavailable(f"unknown agent {agent!r}")
     api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeUnavailable("OPENROUTER_API_KEY is not set")
+        raise RuntimeUnavailable("No model key: OPENROUTER_API_KEY is not set.")
     model = os.getenv("MANU_MODEL", DEFAULT_MODEL)
     base_url = os.getenv("MANU_MODEL_BASE_URL", DEFAULT_BASE_URL)
     with tempfile.TemporaryDirectory(prefix="manu-agent-") as tmp:
@@ -139,6 +141,15 @@ def read_order(
     return run_agent("order-reader", prompt, tools, **kwargs)
 
 
-def prepare_hearing_brief(store: CaseStore, case_id: str, *, approver: Approver | None = None, **kwargs) -> AgentRun:
-    tools = case_tools(store, case_id, approver=approver)
+def ask_case(
+    store: CaseStore, case_id: str, question: str, *, documents=None, approver: Approver | None = None, **kwargs
+) -> AgentRun:
+    tools = case_tools(store, case_id, approver=approver, documents=documents)
+    return run_agent("case-assistant", question.strip(), tools, **kwargs)
+
+
+def prepare_hearing_brief(
+    store: CaseStore, case_id: str, *, documents=None, approver: Approver | None = None, **kwargs
+) -> AgentRun:
+    tools = case_tools(store, case_id, approver=approver, documents=documents)
     return run_agent("hearing-brief", "Prepare the hearing brief for this case's next date.", tools, **kwargs)

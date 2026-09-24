@@ -52,6 +52,13 @@ manu.runtime.agent.read_order(store, case_id, order_on)
 | `manu_bail_facts` | auto_read | The six bail facts with sources and gaps |
 | `manu_obligations_propose` | auto_action | Adds `lead` obligations. Quote must be verbatim. A person confirms |
 | `manu_brief_save` | auto_action | Saves a hearing brief as a `brief_prepared` event |
+| `manu_documents_list` | auto_read | The case's uploaded papers |
+| `manu_documents_search` | auto_read | Search papers and orders; file, page and quote per match |
+| `manu_document_page` | auto_read | One page of a paper in full |
+
+Three agents: `order-reader`, `hearing-brief`, and `case-assistant` (behind *Ask this
+case*). Answers from `case-assistant` are checked by `manu.citations`: every quotation is
+located in the case's papers or orders, or reported as not found.
 
 `confirm_write` tools ask a person through an `Approver` before running. `high_risk` tools
 are not exposed at all, and `FORBIDDEN_ACTIONS` (filing, portal mutation, payment,

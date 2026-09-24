@@ -25,6 +25,7 @@ from typing import Any
 from manu import diary, judge
 from manu.case_state.models import CaseEvent, Obligation
 from manu.case_state.store import CaseStore, new_id
+from manu.documents import DocumentStore
 from manu.runtime.wire import WireEvent, tool_error, tool_result
 
 
@@ -114,7 +115,12 @@ def _obj(properties: dict[str, Any], required: list[str]) -> dict[str, Any]:
 
 
 def case_tools(
-    store: CaseStore, case_id: str, *, as_of: date | None = None, approver: Approver | None = None
+    store: CaseStore,
+    case_id: str,
+    *,
+    as_of: date | None = None,
+    approver: Approver | None = None,
+    documents: DocumentStore | None = None,
 ) -> ToolRegistry:
     """The tools an agent gets for one case. Scoped: it cannot see or touch other cases."""
     registry = ToolRegistry(approver)
@@ -263,4 +269,51 @@ def case_tools(
             save_brief,
         )
     )
+    if documents is not None:
+
+        def doc_search(args: dict[str, Any]) -> Any:
+            return {
+                "matches": documents.search(case_id, str(args["query"]), limit=min(int(args.get("limit") or 8), 20))
+            }
+
+        def doc_page(args: dict[str, Any]) -> Any:
+            doc = documents.get(str(args["document_id"]))
+            if doc is None or doc.case_id != case_id:
+                raise KeyError("no such document in this case")
+            page = int(args["page"])
+            if not 1 <= page <= len(doc.pages):
+                raise ValueError(f"{doc.name} has {len(doc.pages)} pages")
+            return {"document": doc.name, "page": page, "of": len(doc.pages), "text": doc.pages[page - 1][:20000]}
+
+        def doc_list(_args: dict[str, Any]) -> Any:
+            return {"documents": [d.summary() for d in documents.for_case(case_id)]}
+
+        registry.register(
+            ToolSpec(
+                "manu_documents_list",
+                "List this case's uploaded documents (name, kind, page count).",
+                _obj({}, []),
+                Tier.AUTO_READ,
+                doc_list,
+            )
+        )
+        registry.register(
+            ToolSpec(
+                "manu_documents_search",
+                "Search this case's documents and orders. Returns file, page and a quote for each match. "
+                "Use several short searches with the words the document would use.",
+                _obj({"query": {"type": "string"}, "limit": {"type": "integer"}}, ["query"]),
+                Tier.AUTO_READ,
+                doc_search,
+            )
+        )
+        registry.register(
+            ToolSpec(
+                "manu_document_page",
+                "Read one page of an uploaded document in full, by document id and page number.",
+                _obj({"document_id": {"type": "string"}, "page": {"type": "integer"}}, ["document_id", "page"]),
+                Tier.AUTO_READ,
+                doc_page,
+            )
+        )
     return registry

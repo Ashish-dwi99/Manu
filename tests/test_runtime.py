@@ -143,3 +143,21 @@ def test_run_agent_builds_the_kimi_command(monkeypatch, tmp_path):
     assert env["KIMI_API_KEY"] == "sk-test" and "ANTHROPIC_API_KEY" not in env and "OPENROUTER_API_KEY" not in env
     names = {t["name"] for t in seen["kwargs"]["external_tools"]}
     assert {"manu_case_read", "manu_order_text", "manu_obligations_propose"} <= names
+
+
+def test_case_assistant_reads_documents_through_the_wire(monkeypatch):
+    from manu.documents import DocumentStore
+
+    store, case = seeded()
+    documents = DocumentStore(store)
+    tools = case_tools(store, case.id, as_of=TODAY, documents=documents)
+    fir = next(d for d in documents.for_case(case.id) if d.name.startswith("FIR"))
+    script = [
+        {"kind": "tool", "name": "manu_documents_search", "arguments": {"query": "recovered"}},
+        {"kind": "tool", "name": "manu_document_page", "arguments": {"document_id": fir.id, "page": 2}},
+        {"kind": "text", "text": "11 cartons were recovered [FIR, p. 2]."},
+    ]
+    result = fake_client(script, tools, monkeypatch).run_prompt("What was recovered?")
+    assert result.text == "11 cartons were recovered [FIR, p. 2]."
+    assert [r["is_error"] for r in tools.receipts] == [False, False]
+    assert (agent_module.AGENTS_DIR / "case-assistant" / "agent.yaml").is_file()

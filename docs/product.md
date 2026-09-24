@@ -54,6 +54,8 @@ and what you have to do, with the source.**
 | 1 | Real connectors: eCourts Open API (institutional onboarding), High Court case status and orders, and a portal browser agent on the Chotu page tool for the gaps | Chotu page tool |
 | 1 | Order PDFs: text + OCR with page numbers, so every quote carries a page | Tura `doc_text` / `legal_agent/ocr.py` |
 | 1 | Hearing brief: one click on the case page runs the `hearing-brief` agent | `runtime/agents/hearing-brief` |
+| 1 | Indian legal research attached to a case: verify citation → find judgment → read → cite only what was read (see `mike-study.md`) | Tura `legal_agent` research tools, `doc_intel` grammars, Mike's loop (ideas) |
+| 1 | Drafting from templates (adjournment application, bail application, written submissions), with a pause for missing facts | Tura `legal_agent/drafting.py`, Mike's `ask_inputs` idea |
 | 2 | Firm diary: teams, matter access, audit trail, assignment of directions | Mike's orgs/grants/audit (ideas only) |
 | 2 | Morning digest on WhatsApp / email | Tura messaging |
 | 2 | Case folder: link a folder, index filings, cite them | Tura `legal_agent` store + `doc_intel` |

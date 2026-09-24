@@ -40,3 +40,71 @@ the docs.
 4. **Courts are live data.** Mike reasons over documents you upload. Manu also watches
    the court (eCourts / NJDG / High Court portals) and turns changes into events and
    obligations, each tied to the order it came from.
+
+## What an Indian lawyer needs from Mike, ranked
+
+Measured against one question: *does this remove work an advocate or a firm does every
+week?* Mike serves transactional lawyers first (contracts, redlines). Indian litigation
+chambers live in orders, filings and hearing dates, so the ranking differs from Mike's
+own emphasis.
+
+| # | Mike gives | Why an Indian lawyer needs it | Manu |
+| --- | --- | --- | --- |
+| 1 | **Matter documents** — upload, extract text, find in document with page citations | Every case is a bundle: petition, reply, orders, FIR, chargesheet. Finding "where did the IO say that" is daily work | **Built now**: case documents with page-level text, search that answers with file + page + quote |
+| 2 | **Workflows / quick actions** — one-click recipes | Chambers repeat the same outputs: list of dates, synopsis, hearing brief, adjournment application | **Built now**: *List of dates* (instant, from the record, exported as .docx) and *Hearing brief* (agent). More recipes follow the same shape |
+| 3 | **Generate .docx** | Everything filed or sent is a Word file | **Built now** for the list of dates; drafts follow |
+| 4 | **Chat over a matter, with citations** | "What did the court say about the reply?" asked of one case, answered with the page | **Built now**: *Ask this case* on the Chotu runtime, scoped to the case's record and documents. Needs a model key; says so when absent |
+| 5 | Citation verification (CourtListener) | Wrong citations embarrass counsel in court | Next: Indian sources (SCI, High Courts, India Code); Indian Kanoon as a lead only |
+| 6 | Tabular review | Due diligence, and reviewing many FIRs/statements side by side | Phase 3, in Tura's Sheets (see `sheets-and-excel.md`) |
+| 7 | Word add-in | Drafting happens in Word | Phase 3 |
+| 8 | Orgs, sharing, audit | Firms: juniors, seniors, clerks on the same matter | Phase 2 |
+| 9 | Tamper-evident export | Proving what a document looked like when reviewed | Phase 2, same manifest shape |
+| 10 | Scoped memory | Firm preferences, a senior's drafting style | Dhee, later; never a source |
+
+Not needed: US case law, US-centric workflow catalogue, Mike's per-surface chat engines
+(Manu has one runtime).
+
+## In depth: what Mike gives per matter, and how it researches
+
+### Per matter ("project")
+
+| Mike | What it is | Manu today |
+| --- | --- | --- |
+| Documents, folders, versions | Upload, extract text with `[Page N]` markers, keep every version with a SHA-256 | **Papers** tab: page-level text, dedupe by hash. Versions: phase 2 |
+| Project chats | Assistant scoped to the matter's documents; tools `list_documents`, `read_document`, `fetch_documents`, `find_in_document` | **Ask this case** on the Chotu runtime with `manu_documents_list/search`, `manu_document_page`, plus the court record and orders |
+| Verbatim citations | Every claim carries `[N]` and a `<CITATIONS>` block of short quotes with page; the server then **locates each quote** in the source (exact → whitespace/case → punctuation-tolerant) and marks misses unverified | **Built**: `manu.citations` checks every quotation in an answer against the case's papers and orders, same three tiers; the UI shows found / not found beside the answer |
+| Tabular reviews | Documents × questions grid, typed cells, each cited | Phase 3 (Sheets) |
+| Workflows + templates | Recipes; templates are immutable, filled as copies | **List of dates** (deterministic) and **Hearing brief** (agent). Indian drafting templates next |
+| Generate / edit | `generate_docx`, `generate_excel`, `generate_ppt`, `edit_document` (tracked-change substitutions), `ask_inputs` to pause for missing facts | .docx for the list of dates. Drafting with `edit_document`-style substitutions and an `ask_inputs`-style pause: next |
+| Project memory | `memory.md` curated after a chat goes quiet | Dhee, later |
+
+### Research (CourtListener, US only)
+
+Mike's research loop is strict, and the strictness is the valuable part:
+
+1. **Verify** reporter citations (never case names) → cluster IDs.
+2. **Fetch** the matched cases (metadata only).
+3. **Find in case**: 1–3-word searches, at most three per turn, returning passages.
+4. **Read** only the opinion needed if snippets are not enough.
+5. **Cite only text it read this turn**, with a link and an `[N]` marker whose quote is
+   verbatim opinion text. On a rate limit, stop and answer from what it already has.
+
+### Do we need the same? Yes — the discipline, not the source
+
+An Indian advocate needs research every week: the Supreme Court or High Court judgment
+behind a bail argument, whether a precedent still stands, the text of a provision as on
+the date of the offence. Mike's CourtListener tools are useless here, but its loop is
+exactly right. Manu's version:
+
+| Step | Indian source | Status |
+| --- | --- | --- |
+| Verify a citation | Parse with `doc_intel` grammars (`(2020) 5 SCC 1`, `AIR 2019 SC 1234`, `2021 SCC OnLine Del 456`, neutral citations `2023 INSC 123`), then resolve | Grammars built; resolver next |
+| Find judgments | Indian Kanoon API (paid token) as the search index; eCourts judgments portal and SCI for official copies | Next. Tura's Manu already has `legal_authority_search` with the official/lead split |
+| Read + find in judgment | Paragraph-numbered text; cite by paragraph, not page | Next |
+| Statutes | India Code, **as on the offence date** (IPC before 1 July 2024, BNS after) | Offence table built; full text next |
+| Cite only what was read | Same rule; Indian Kanoon results are *leads* until read from an official or licensed copy | Enforced by the same quote check |
+
+What we deliberately do not copy: Mike's research is a chat feature. In Manu it is
+attached to a case. A judgment the advocate relies on is saved to the case's papers,
+with its citation verified, so the hearing brief and the list of authorities can cite
+it later.

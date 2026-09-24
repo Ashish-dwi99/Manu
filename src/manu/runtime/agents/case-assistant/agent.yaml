@@ -1,0 +1,7 @@
+version: 1
+agent:
+  name: "manu-case-assistant"
+  system_prompt_path: ./system.md
+  system_prompt_args:
+    ROLE_ADDITIONAL: ""
+  tools: []

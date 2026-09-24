@@ -104,3 +104,14 @@ export function groupEventsByCase(events) {
   }
   return [...groups.values()];
 }
+
+export function greeting(now = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat("en-IN", { hour: "numeric", hour12: false, timeZone: MANU_TIME_ZONE }).format(now));
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+export function plural(count, one, many = `${one}s`) {
+  return `${count} ${count === 1 ? one : many}`;
+}
