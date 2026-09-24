@@ -25,7 +25,8 @@
         },
         {
           "name": "Ritu Sharma",
-          "role": "accused"
+          "role": "accused",
+          "advocate": "R. Mehta"
         }
       ],
       "charges": [

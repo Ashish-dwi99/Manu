@@ -153,3 +153,10 @@ def prepare_hearing_brief(
 ) -> AgentRun:
     tools = case_tools(store, case_id, approver=approver, documents=documents)
     return run_agent("hearing-brief", "Prepare the hearing brief for this case's next date.", tools, **kwargs)
+
+
+def research_case(
+    store: CaseStore, case_id: str, question: str, *, research, documents=None, approver: Approver | None = None, **kwargs
+) -> AgentRun:
+    tools = case_tools(store, case_id, approver=approver, documents=documents, research=research)
+    return run_agent("researcher", question.strip(), tools, **kwargs)

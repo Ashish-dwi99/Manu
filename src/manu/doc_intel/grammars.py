@@ -118,6 +118,9 @@ _REPORTERS = (
     "MPLJ",
     "RLW",
     "PLR",
+    # The demo library's fictional reporter, so the demo can show a citation being checked
+    # without inventing a citation in a real reporter.
+    "Demo",
 )
 CITATION_BRACKETED_YEAR = re.compile(
     r"\((?:19|20)\d{2}\)\s*\d{1,3}\s*(?:" + "|".join(_REPORTERS) + r")(?:\s+\w{2,10})?\s*\d{1,5}",

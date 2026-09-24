@@ -98,9 +98,9 @@ exactly right. Manu's version:
 
 | Step | Indian source | Status |
 | --- | --- | --- |
-| Verify a citation | Parse with `doc_intel` grammars (`(2020) 5 SCC 1`, `AIR 2019 SC 1234`, `2021 SCC OnLine Del 456`, neutral citations `2023 INSC 123`), then resolve | Grammars built; resolver next |
-| Find judgments | Indian Kanoon API (paid token) as the search index; eCourts judgments portal and SCI for official copies | Next. Tura's Manu already has `legal_authority_search` with the official/lead split |
-| Read + find in judgment | Paragraph-numbered text; cite by paragraph, not page | Next |
+| Verify a citation | Parse with `doc_intel` grammars (`(2020) 5 SCC 1`, `AIR 2019 SC 1234`, `2021 SCC OnLine Del 456`, neutral citations `2023 INSC 123`), then resolve | **Built**: `manu.research.check_citations` — verified / lead / demo / not found |
+| Find judgments | Indian Kanoon API (paid token) as the search index; eCourts judgments portal and SCI for official copies | **Built**: `IndianKanoonSource` (lead) and `LibrarySource` (licensed); official sources next |
+| Read + find in judgment | Paragraph-numbered text; cite by paragraph, not page | **Built**: judgments split by their own paragraph numbers; "rely on ¶n" stores the paragraph on the case |
 | Statutes | India Code, **as on the offence date** (IPC before 1 July 2024, BNS after) | Offence table built; full text next |
 | Cite only what was read | Same rule; Indian Kanoon results are *leads* until read from an official or licensed copy | Enforced by the same quote check |
 

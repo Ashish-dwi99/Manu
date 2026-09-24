@@ -16,20 +16,26 @@ failing which the SHO shall remain present in person.
                                    Source: order dated 23.09.2026 · [Confirm] [Done]
 ```
 
-One product, one record, two lenses:
+One product, one record, one view. An advocate, a firm and a judge use the same case OS:
+add a CNR and Manu gives you everything the record holds. Nobody switches modes.
 
-| | Advocate / firm | Judge |
-| --- | --- | --- |
-| **Diary** | My cases listed today, what each is listed for, last order, what's due | Today's cause list |
-| **What changed** | New orders, moved dates, directions found | same |
-| **Due** | Directions and hearings in the next 14 days | same |
-| **Case** | Last order, directions with source, timeline | + Section 479 BNSS and default-bail arithmetic with working, bail facts (never a recommendation) |
-| **Papers** | Upload PDF/Word/text; search papers and orders, answered with file + page + quote | same |
-| **Ask this case** | Questions answered only from the record and papers on the Chotu runtime; every quotation checked against the papers | same |
-| **List of dates** | Chronology from the record, each row sourced, downloadable as .docx | same |
+| Screen | What it shows |
+| --- | --- |
+| **Today** | One box: paste a CNR to follow a case, or find one of yours. Below it, what is listed today (the diary and the cause list are the same list), and what needs you: liberty dates and directions due |
+| **Board** | On today's list: item number and court hall per matter, and the court's live display board with how many items are ahead of you (demo court simulates one) |
+| **Import** | Type an advocate's name in the same box; follow every case found in one go |
+| **This week** | Hearings and directions for the next seven days, by day |
+| **What changed** | New orders, moved dates, directions found, each with its source |
+| **Case** | Next hearing, last order, what somebody has to do, and for criminal matters the s.479 BNSS and default-bail arithmetic with the working and the six bail facts (never a recommendation). Ask the case anything underneath |
+| **Notes and deadlines** | Your own notes of each hearing, marked as yours. A limitation calculator (appeal, revision, review, SLP, written statement) with the working, saved to the to-do |
+| **Drafts to send** | Morning cause list message and client updates (7 and 2 days before a hearing), edited, copied or opened in WhatsApp by you. Manu never sends |
+| **Research** | Search judgments, check citations, read by paragraph, rely on a paragraph for the case. Indian Kanoon (`MANU_INDIANKANOON_TOKEN`) is a lead; a firm library (`MANU_JUDGMENTS_DIR`) is licensed; the demo library is fictional |
+| **Drafting** | Adjournment and regular bail applications filled from the record, each paragraph sourced, asking for what only you know; .docx |
+| **Source panel** | Every line on a case carries a numbered source. Clicking it opens the order or page at those words, highlighted, with whether the words are really there. Papers, list of dates (.docx) and timeline live in the same panel |
 
-The interface uses Tura's design language: warm paper on a ruled pastel ground, Source
-Serif 4 and IBM Plex Sans, a terracotta accent, light and dark.
+The interface follows the Chotu workspace (root): floating sheets on a hatched ground,
+Geist for working text, Geist Mono for what you copy, Source Serif 4 for the court's own
+words, light and dark.
 
 ## Quick start
 
@@ -40,6 +46,11 @@ cd apps/web && npm install && npm run dev   # UI on http://127.0.0.1:5180
 ```
 
 Or `cd apps/web && npm run build` once, and `manu serve --demo` serves the built UI too.
+
+The demo court's display board follows the clock (sits 10:30, rises 16:30 IST). To see it
+mid-session at any hour: `MANU_DEMO_BOARD_AT=11:42 uv run manu serve --demo`. Try
+importing by advocate name with "R. Mehta": two of the demo court's cases are not yet
+followed.
 
 The demo court has five cases in Saket, New Delhi. It seeds "yesterday" and then runs
 this morning's watch, so the diary opens on real changes: an adjourned bail hearing with a
@@ -63,7 +74,7 @@ cd apps/web && npm test && npm run build
                     │
    ┌────────────────┼──────────────────────────┐
    │                │                          │
- diary          watcher ── connectors ladder   judge lens
+ diary          watcher ── connectors ladder   liberty labels
  (views)        (fetch → diff → events)        (labels, bail facts)
    │                │                          │
    └──────── case_state (SQLite: cases, append-only events, snapshots)

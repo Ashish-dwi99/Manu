@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Web | `apps/web` | Shows the record. Never computes law. |
 | API | `manu.api` | Thin: each handler calls one function. |
-| Views | `manu.diary`, `manu.judge` | Read the case state; the judge lens adds labels and bail facts. |
+| Views | `manu.diary`, `manu.judge` | Read the case state; liberty labels and bail facts are part of every case view. |
 | Watcher | `manu.watcher` | Fetch → diff → events → read new orders → snapshot. Deterministic. |
 | Connectors | `manu.connectors` | A ladder, most official first. |
 | Orders | `manu.orders` | Deterministic reader: next date, directions, exact spans. |

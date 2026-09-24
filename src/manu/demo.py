@@ -12,6 +12,7 @@ from datetime import date
 from pathlib import Path
 
 from manu.case_state.store import CaseStore
+from manu.clock import india_today
 from manu.connectors import ConnectorLadder, DemoConnector
 from manu.watcher import CourtWatcher, WatchReport
 
@@ -19,7 +20,7 @@ FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "demo"
 
 
 def seed(store: CaseStore, *, today: date | None = None, fixtures: Path = FIXTURES) -> WatchReport:
-    today = today or date.today()
+    today = today or india_today()
     yesterday = CourtWatcher(
         store, ConnectorLadder([DemoConnector(fixtures / "day0", today=today)]), today=lambda: today
     )
@@ -42,6 +43,14 @@ def seed_documents(store: CaseStore, fixtures: Path = FIXTURES) -> None:
             continue
         for path in sorted(folder.glob("*.txt")):
             documents.add(case.id, path.name, path.read_bytes())
+
+
+def demo_research_ladder():
+    """The live research ladder plus the fictional demo library, labelled `demo`."""
+    from manu.research import LibrarySource, ResearchLadder, default_research_ladder
+
+    live = default_research_ladder()
+    return ResearchLadder([LibrarySource(FIXTURES / "judgments", name="demo_library", standing="demo"), *live.sources])
 
 
 def demo_ladder(today: date | None = None, fixtures: Path = FIXTURES) -> ConnectorLadder:

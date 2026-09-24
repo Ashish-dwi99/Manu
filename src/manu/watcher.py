@@ -20,8 +20,9 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 
-from manu.case_state.models import Accused, Case, CaseEvent, Charge, Hearing, OrderRecord, Party, SourceRef
+from manu.case_state.models import Accused, Case, CaseEvent, Charge, Hearing, Listing, OrderRecord, Party, SourceRef
 from manu.case_state.store import CaseStore, new_id
+from manu.clock import india_today
 from manu.connectors.base import ConnectorLadder, CourtOrder, CourtRecord, FetchResult, Tier
 from manu.orders import read_order
 
@@ -116,6 +117,13 @@ def apply_record(case: Case, fetch: FetchResult, *, read_old_orders: bool = Fals
         case.next_date = record.next_date
         case.next_purpose = record.next_purpose or case.next_purpose
 
+    # The cause-list position is today's fact, not history: it follows the record, and
+    # it is dropped once the date it was printed for has passed.
+    if record.listing is not None:
+        case.listing = Listing(**record.listing.model_dump(), source=record_source)
+    elif case.listing is not None and case.listing.on != case.next_date:
+        case.listing = None
+
     seen = {_order_key(order) for order in case.orders}
     new_orders = sorted((o for o in record.orders if _order_key(o) not in seen), key=lambda o: o.on)
     latest_on = max((o.on for o in record.orders), default=None)
@@ -207,7 +215,7 @@ class WatchReport:
 
 
 class CourtWatcher:
-    def __init__(self, store: CaseStore, ladder: ConnectorLadder, *, today: Callable[[], date] = date.today) -> None:
+    def __init__(self, store: CaseStore, ladder: ConnectorLadder, *, today: Callable[[], date] = india_today) -> None:
         self.store = store
         self.ladder = ladder
         self.today = today

@@ -23,7 +23,7 @@ def utc_now() -> datetime:
 class SourceRef(BaseModel):
     """Where one fact came from, precise enough to click through to it."""
 
-    kind: Literal["court_record", "order", "upload", "human"]
+    kind: Literal["court_record", "order", "upload", "human", "judgment"]
     connector: str = ""
     """Which connector produced it (e.g. `ecourts_api`, `fixture`, `human`)."""
     uri: str = ""
@@ -103,6 +103,59 @@ class Obligation(BaseModel):
     is not shown."""
 
 
+class Note(BaseModel):
+    """What a person wrote about the case: what happened in court before the order is
+    uploaded, what the client said, what to carry next time. A human fact, sourced to
+    the person who wrote it; never mixed up with what the court recorded."""
+
+    id: str
+    on: date
+    """The court day the note is about."""
+    text: str
+    author: str = ""
+    created_at: datetime = Field(default_factory=utc_now)
+    source: SourceRef
+
+
+class Authority(BaseModel):
+    """A judgment the advocate relies on in this case: the paragraph, word for word, as
+    read from a source whose standing is recorded (official, licensed, lead or demo)."""
+
+    id: str
+    citation: str = ""
+    title: str
+    court: str = ""
+    decided_on: date | None = None
+    paragraph: int
+    quote: str
+    """The paragraph's own words, as read. Never a paraphrase."""
+    standing: Literal["official", "licensed", "lead", "demo"]
+    doc_id: str
+    source: SourceRef
+    added_at: datetime = Field(default_factory=utc_now)
+
+
+class Client(BaseModel):
+    """Who the advocate reports to on this case. Entered by a person; Manu uses it only
+    to address a draft it never sends."""
+
+    name: str = ""
+    source: SourceRef
+
+
+class Listing(BaseModel):
+    """Where a case sits on a cause list: the item number, the court hall, the bench."""
+
+    on: date
+    item: str = ""
+    """As printed: "14", "14A", "S-3"."""
+    court_hall: str = ""
+    bench: str = ""
+    list_type: str = ""
+    """"Regular", "Supplementary", "Advance" — as the court names it."""
+    source: SourceRef
+
+
 Stage = Literal[
     "investigation",
     "pre_charge",
@@ -137,6 +190,11 @@ class Case(BaseModel):
     orders: list[OrderRecord] = Field(default_factory=list)
     obligations: list[Obligation] = Field(default_factory=list)
     special_statute: bool = False
+    listing: Listing | None = None
+    """Position on the cause list for `listing.on`, when a connector carries it."""
+    notes: list[Note] = Field(default_factory=list)
+    client: Client | None = None
+    authorities: list[Authority] = Field(default_factory=list)
     tracked_by: list[str] = Field(default_factory=list)
     """Who follows this case: advocate ids, a court id, a client."""
     updated_at: datetime = Field(default_factory=utc_now)
@@ -157,6 +215,8 @@ EventKind = Literal[
     "obligation_found",
     "fetch_failed",
     "brief_prepared",
+    "note_added",
+    "deadline_added",
 ]
 
 

@@ -25,7 +25,8 @@
         },
         {
           "name": "Ritu Sharma",
-          "role": "accused"
+          "role": "accused",
+          "advocate": "R. Mehta"
         }
       ],
       "charges": [
@@ -53,5 +54,12 @@
         }
       ]
     }
+  },
+  "listing": {
+    "on": "@+0",
+    "item": "31",
+    "court_hall": "Court Room 312, Saket Courts Complex",
+    "bench": "ASJ-03",
+    "list_type": "Regular"
   }
 }

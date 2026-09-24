@@ -1,0 +1,35 @@
+{
+  "cnr": "DLSE030009912024",
+  "case_number": "CS SCJ 991/2024",
+  "court": "Court of Civil Judge-02, South District, Saket, New Delhi",
+  "title": "Meena Gupta v. Anil Gupta",
+  "status": "Pending",
+  "stage": "pleadings",
+  "next_date": "@+9",
+  "next_purpose": "Replication",
+  "orders": [
+    {
+      "on": "@-20",
+      "title": "Written statement filed",
+      "uri": "orders/DLSE030009912024/order-2.pdf",
+      "text": "Present: Ld. counsel for the plaintiff. Sh. R. Mehta, Ld. counsel for the defendant. Written statement filed. Replication be filed within four weeks. Put up on {@+9} for replication and admission/denial of documents."
+    }
+  ],
+  "raw": {
+    "particulars": {
+      "case_type": "civil",
+      "parties": [
+        {
+          "name": "Meena Gupta",
+          "role": "petitioner",
+          "advocate": "P. Nair"
+        },
+        {
+          "name": "Anil Gupta",
+          "role": "respondent",
+          "advocate": "R. Mehta"
+        }
+      ]
+    }
+  }
+}

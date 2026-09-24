@@ -57,3 +57,34 @@ The UI shows unreviewed rows.
   stolen property is BNS 317(2).
 * The PRD's 479 example shows an alert 183 days before the threshold, but its own rule is
   7 days. Manu follows the rule and shows the percentage served.
+
+## Limitation (`limitation.compute`)
+
+"By when must I file?" after an adverse order. The advocate chooses what is being filed
+(Manu never guesses the article); the start date comes from an order on the record or a
+date the advocate enters. Every rule names its provision and is `reviewed=False`.
+
+| Filing | Provision | Period |
+| --- | --- | --- |
+| Appeal to the High Court from a decree or order | Limitation Act Art. 116(a) | 90 days |
+| Appeal to any other court | Art. 116(b) | 30 days |
+| Commercial appeal | Commercial Courts Act s.13(1A) | 60 days |
+| Review (not the Supreme Court) | Art. 124 | 30 days |
+| Revision | Art. 131 | 90 days |
+| Restore a suit dismissed for default | Art. 122 | 30 days |
+| Set aside an ex parte decree | Art. 123 | 30 days |
+| Appeal against conviction, High Court / other court / death sentence | Art. 115 | 60 / 30 / 30 days |
+| State appeal against acquittal | Art. 114(a) | 90 days |
+| SLP | Supreme Court Rules 2013, O.XXI r.1, O.XXII r.2 | 90 days |
+| Written statement / commercial | CPC O.VIII r.1 | 30 days; outer 90 / 120 |
+
+Counting: s.12(1) excludes the start day; s.12(2) excludes the time from applying for a
+certified copy to its readiness, counted short (the day of application is not excluded)
+so the date shown is never later than the true last day. A copy applied for after the
+period ran excludes nothing. s.4: a Sunday last day moves to Monday "if open"; the court's
+holiday list is unknown and always flagged. When the period has run, s.5 is mentioned
+where it applies; the written statement shows the outer limit only the court can grant.
+
+A computed date can be added to the case's to-do. It is stored as an obligation whose
+source is `kind="human"`, `connector="limitation"`, with the working as its quote, so the
+citation pill opens the working rather than an order.

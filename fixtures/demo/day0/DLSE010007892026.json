@@ -25,11 +25,13 @@
         },
         {
           "name": "Imran",
-          "role": "accused"
+          "role": "accused",
+          "advocate": "R. Mehta"
         },
         {
           "name": "Salim",
-          "role": "accused"
+          "role": "accused",
+          "advocate": "R. Mehta"
         }
       ],
       "charges": [

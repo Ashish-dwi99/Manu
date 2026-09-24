@@ -25,6 +25,7 @@ from typing import Any
 from manu import diary, judge
 from manu.case_state.models import CaseEvent, Obligation
 from manu.case_state.store import CaseStore, new_id
+from manu.clock import india_today
 from manu.documents import DocumentStore
 from manu.runtime.wire import WireEvent, tool_error, tool_result
 
@@ -121,10 +122,11 @@ def case_tools(
     as_of: date | None = None,
     approver: Approver | None = None,
     documents: DocumentStore | None = None,
+    research=None,
 ) -> ToolRegistry:
     """The tools an agent gets for one case. Scoped: it cannot see or touch other cases."""
     registry = ToolRegistry(approver)
-    today = as_of or date.today()
+    today = as_of or india_today()
 
     def load():
         case = store.get(case_id)
@@ -133,7 +135,7 @@ def case_tools(
         return case
 
     def case_read(_args: dict[str, Any]) -> Any:
-        return diary.case_detail(store, case_id, today, lens="advocate")
+        return diary.case_detail(store, case_id, today)
 
     def order_text(args: dict[str, Any]) -> Any:
         on = date.fromisoformat(str(args["on"]))
@@ -316,4 +318,102 @@ def case_tools(
                 doc_page,
             )
         )
+    if research is not None:
+        _research_tools(registry, store, case_id, research)
     return registry
+
+
+def _research_tools(registry: ToolRegistry, store: CaseStore, case_id: str, research) -> None:
+    """Search, read and cite judgments. A paragraph can be relied on only after it was
+    read in this run: the tool refuses to save what the agent has not seen."""
+    from manu.research import check_citations
+
+    read: set[tuple[str, str, int]] = set()
+
+    def search(args: dict[str, Any]) -> Any:
+        hits, attempts = research.search(str(args["query"]), limit=min(int(args.get("limit") or 8), 15))
+        return {
+            "hits": [h.as_dict() for h in hits],
+            "searched": [{"source": a.source, "outcome": a.outcome} for a in attempts],
+        }
+
+    def read_judgment(args: dict[str, Any]) -> Any:
+        source, doc_id = str(args["source"]), str(args["doc_id"])
+        judgment = research.fetch(source, doc_id)
+        if judgment is None:
+            raise KeyError("no such judgment in that source")
+        first = max(1, int(args.get("from_paragraph") or 1))
+        last = min(len(judgment.paragraphs), int(args.get("to_paragraph") or first + 19))
+        for n in range(first, last + 1):
+            read.add((source, doc_id, n))
+        return {
+            "title": judgment.title,
+            "court": judgment.court,
+            "decided_on": judgment.decided_on.isoformat() if judgment.decided_on else None,
+            "citations": judgment.citations,
+            "standing": judgment.standing,
+            "paragraph_count": len(judgment.paragraphs),
+            "paragraphs": [{"n": n, "text": judgment.paragraphs[n - 1]} for n in range(first, last + 1)],
+        }
+
+    def check(args: dict[str, Any]) -> Any:
+        return check_citations(str(args["text"]), research)
+
+    def rely(args: dict[str, Any]) -> Any:
+        source, doc_id, n = str(args["source"]), str(args["doc_id"]), int(args["paragraph"])
+        if (source, doc_id, n) not in read:
+            raise ValueError("Read that paragraph with manu_judgment_read before relying on it.")
+        judgment = research.fetch(source, doc_id)
+        if judgment is None:
+            raise KeyError("no such judgment in that source")
+        return diary.add_authority(store, case_id, judgment, n)
+
+    registry.register(
+        ToolSpec(
+            "manu_judgment_search",
+            "Search Indian judgments by words or by citation. Each hit carries its standing: official, licensed, "
+            "lead (confirm before citing) or demo (fictional, not law). Use short searches with the words a judgment would use.",
+            _obj({"query": {"type": "string"}, "limit": {"type": "integer"}}, ["query"]),
+            Tier.AUTO_READ,
+            search,
+        )
+    )
+    registry.register(
+        ToolSpec(
+            "manu_judgment_read",
+            "Read a judgment's numbered paragraphs (default: 20 from `from_paragraph`). Cite only paragraphs you read here.",
+            _obj(
+                {
+                    "source": {"type": "string"},
+                    "doc_id": {"type": "string"},
+                    "from_paragraph": {"type": "integer"},
+                    "to_paragraph": {"type": "integer"},
+                },
+                ["source", "doc_id"],
+            ),
+            Tier.AUTO_READ,
+            read_judgment,
+        )
+    )
+    registry.register(
+        ToolSpec(
+            "manu_citation_check",
+            "Check every citation in a text against the connected sources: verified, lead, demo or not_found.",
+            _obj({"text": {"type": "string"}}, ["text"]),
+            Tier.AUTO_READ,
+            check,
+        )
+    )
+    registry.register(
+        ToolSpec(
+            "manu_authority_save",
+            "Save one paragraph of a judgment as an authority for this case, word for word as read. "
+            "Refused unless the paragraph was read with manu_judgment_read in this run.",
+            _obj(
+                {"source": {"type": "string"}, "doc_id": {"type": "string"}, "paragraph": {"type": "integer"}},
+                ["source", "doc_id", "paragraph"],
+            ),
+            Tier.AUTO_ACTION,
+            rely,
+        )
+    )

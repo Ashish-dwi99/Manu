@@ -24,5 +24,5 @@ cd apps/web && npm test && npm run build
 - Agents run only on the Chotu runtime (`manu.runtime`). No second agent loop, no direct
   model calls from product code.
 - No tool may file, submit, pay, or contact anyone (`FORBIDDEN_ACTIONS`).
-- The judge lens never recommends an outcome.
+- The liberty view (labels, s.479, bail facts) never recommends an outcome.
 - Mike (AGPL-3.0) is studied, never copied. See `docs/mike-study.md`.
