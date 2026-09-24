@@ -2815,3 +2815,166 @@ p.small {
   justify-content: space-between;
   margin: 0;
 }
+
+/* -- drafting ------------------------------------------------------------------------------ */
+
+.mn-sheet-dialog.wide {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: calc(100vh - 48px);
+  overflow: hidden;
+  width: min(1180px, 100%);
+}
+
+.mn-drafting {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mn-questions {
+  align-content: start;
+  display: grid;
+  gap: 14px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.mn-questions label {
+  display: grid;
+  font-size: 13px;
+  gap: 5px;
+}
+
+.mn-questions label span b {
+  color: var(--red);
+}
+
+.mn-questions label span small,
+.mn-questions label > small {
+  color: var(--ink-faint);
+}
+
+.mn-questions input,
+.mn-questions textarea,
+.mn-questions select {
+  width: 100%;
+  min-width: 0;
+  background: var(--sheet);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  padding: 7px 10px;
+  resize: vertical;
+}
+
+.mn-questions label.needed input,
+.mn-questions label.needed textarea,
+.mn-questions label.needed select {
+  border-color: var(--accent-line);
+}
+
+.mn-paper {
+  background: #fffefb;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: #1c1b19;
+  font-family: "Times New Roman", var(--serif);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow: auto;
+  padding: 36px 44px;
+}
+
+.dark .mn-paper {
+  background: #f4f1ea;
+}
+
+.mn-paper > div {
+  border-radius: 6px;
+  margin: 0 -8px 10px;
+  padding: 2px 8px;
+  position: relative;
+}
+
+.mn-paper p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.mn-paper > div:hover {
+  background: rgba(194, 103, 63, 0.07);
+}
+
+.mn-paper-heading p,
+.mn-paper-title p {
+  font-weight: 700;
+  text-align: center;
+}
+
+.mn-paper-title p {
+  margin-top: 8px;
+  text-decoration: underline;
+}
+
+.mn-paper-center p {
+  text-align: center;
+}
+
+.mn-paper-para p {
+  text-align: justify;
+}
+
+.mn-paper-prayer p::first-line {
+  font-weight: 700;
+}
+
+.mn-paper-sign p {
+  margin-top: 12px;
+}
+
+.mn-paper-note p {
+  color: #6d6a64;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.mn-src-tag {
+  background: #1c1b19;
+  border-radius: 6px;
+  color: #fff;
+  display: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  padding: 2px 7px;
+  position: absolute;
+  right: 6px;
+  top: -12px;
+  z-index: 2;
+}
+
+.mn-paper > div:hover .mn-src-tag {
+  display: block;
+}
+
+.mn-draft-buttons {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+@media (max-width: 860px) {
+  .mn-drafting {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .mn-paper {
+    overflow: visible;
+    padding: 20px;
+  }
+}

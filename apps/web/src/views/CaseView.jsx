@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FileText, MessageCircle, PanelRight, Radio, RefreshCw, Search, ShieldAlert, Timer, Trash2, X } from "lucide-react";
+import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FilePen, FileText, MessageCircle, PanelRight, Radio, RefreshCw, Search, ShieldAlert, Timer, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api.js";
 import { boardHeadline, countdown, courtLabel, formatDate, humanDates, plural, s479Headline, timeAgo } from "../model.js";
 import { CitePill, Labels, Loading } from "./common.jsx";
+import { DraftEditor } from "./DraftEditor.jsx";
 import { DraftSheet } from "./DraftSheet.jsx";
 import { Standing } from "./Research.jsx";
 import { MatchList, SourcePanel } from "./SourcePanel.jsx";
@@ -111,6 +112,7 @@ export function CaseView({ caseId, today }) {
                     setPanelOpen(true);
                   }} />
                   <Limitation c={c} today={today} />
+                  <Drafts c={c} today={today} />
                   {c.criminal ? <Liberty criminal={c.criminal} today={today} /> : null}
                   {c.bail_facts?.applicable ? <BailFacts facts={c.bail_facts} /> : null}
                   <Conversation c={c} openCite={openCite} openTab={(tab) => {
@@ -316,6 +318,32 @@ function Directions({ c, today, citeProps }) {
           </ul>
         </details>
       ) : null}
+    </section>
+  );
+}
+
+/* -- drafts ------------------------------------------------------------------------------- */
+
+function Drafts({ c, today }) {
+  const templates = useQuery({ queryKey: ["draft-templates", c.id], queryFn: () => api.draftTemplates(c.id) });
+  const [open, setOpen] = useState(null);
+  return (
+    <section className="mn-part">
+      <h2 className="mn-part-title">
+        Draft an application <span>· filled from the record, you answer the rest</span>
+      </h2>
+      <div className="mn-draft-buttons">
+        {(templates.data?.templates || []).map((t) => (
+          <button key={t.key} type="button" className="mn-limitation-open" onClick={() => setOpen(t.key)}>
+            <FilePen size={16} />
+            <span>
+              {t.title}
+              <small>{t.key === "bail" ? "Custody, chargesheet, antecedents, s.479 and your authorities, each sourced" : "Listing, last order and your reason, under the right provision"}</small>
+            </span>
+          </button>
+        ))}
+      </div>
+      {open ? <DraftEditor c={c} template={open} today={today} onClose={() => setOpen(null)} /> : null}
     </section>
   );
 }

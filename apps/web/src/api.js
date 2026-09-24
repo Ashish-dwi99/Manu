@@ -60,6 +60,14 @@ export const api = {
   addAuthority: (caseId, source, docId, paragraph) =>
     request(`/api/cases/${caseId}/authorities`, json("POST", { source, doc_id: docId, paragraph })),
   deleteAuthority: (caseId, id) => request(`/api/cases/${caseId}/authorities/${id}`, { method: "DELETE" }),
+  draftTemplates: (caseId) => request(`/api/cases/${caseId}/drafts`),
+  draft: (caseId, template, inputs, on) => request(`/api/cases/${caseId}/drafts/${template}`, json("POST", { inputs, on })),
+  draftDocx: async (caseId, template, inputs, on) => {
+    const response = await fetch(`${BASE}/api/cases/${caseId}/drafts/${template}/docx`, json("POST", { inputs, on }));
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || `${response.status}`);
+    const name = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") || "")?.[1] || "draft.docx";
+    return { blob: await response.blob(), name };
+  },
   brief: (caseId) => request(`/api/cases/${caseId}/brief`, json("POST")),
   ask: (caseId, question) => request(`/api/cases/${caseId}/ask`, json("POST", { question })),
 };

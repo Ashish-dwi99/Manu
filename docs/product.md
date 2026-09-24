@@ -44,7 +44,17 @@ and what you have to do, with the source.**
 7. **Import your practice**: search by advocate name and follow every case at once.
 8. **Limitation**: the last day for an appeal, revision, review, SLP or written statement,
    by fixed rules with the working (see `law-engine.md`), saved to the to-do list.
-9. **Every line cites its words**: a numbered source on each fact opens the order or page
+9. **Drafts a person sends**: the morning cause list for chambers and a client update seven
+   and two days before each hearing, from the record, copied or opened in WhatsApp by the
+   person. Manu never sends.
+10. **Research attached to the case**: search judgments, check every citation (verified,
+    lead, demo, not found), read by paragraph, and rely on a paragraph word for word. Indian
+    Kanoon is a lead source; a firm's library is licensed. The researcher agent cites only
+    what it read in the run.
+11. **Drafting**: adjournment (O.XVII r.1 CPC / s.346 BNSS) and regular bail (s.483 / s.480
+    BNSS) applications filled from the record with each paragraph's source, pausing for
+    what only the advocate knows, downloaded as .docx. Never filed by Manu.
+12. **Every line cites its words**: a numbered source on each fact opens the order or page
    at the quoted words, highlighted, and says whether they were found.
 
 ## What v1 deliberately does not do

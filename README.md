@@ -28,6 +28,9 @@ add a CNR and Manu gives you everything the record holds. Nobody switches modes.
 | **What changed** | New orders, moved dates, directions found, each with its source |
 | **Case** | Next hearing, last order, what somebody has to do, and for criminal matters the s.479 BNSS and default-bail arithmetic with the working and the six bail facts (never a recommendation). Ask the case anything underneath |
 | **Notes and deadlines** | Your own notes of each hearing, marked as yours. A limitation calculator (appeal, revision, review, SLP, written statement) with the working, saved to the to-do |
+| **Drafts to send** | Morning cause list message and client updates (7 and 2 days before a hearing), edited, copied or opened in WhatsApp by you. Manu never sends |
+| **Research** | Search judgments, check citations, read by paragraph, rely on a paragraph for the case. Indian Kanoon (`MANU_INDIANKANOON_TOKEN`) is a lead; a firm library (`MANU_JUDGMENTS_DIR`) is licensed; the demo library is fictional |
+| **Drafting** | Adjournment and regular bail applications filled from the record, each paragraph sourced, asking for what only you know; .docx |
 | **Source panel** | Every line on a case carries a numbered source. Clicking it opens the order or page at those words, highlighted, with whether the words are really there. Papers, list of dates (.docx) and timeline live in the same panel |
 
 The interface follows the Chotu workspace (root): floating sheets on a hatched ground,

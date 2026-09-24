@@ -13,7 +13,7 @@ from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from manu import diary, list_of_dates, messages
+from manu import diary, drafting, list_of_dates, messages
 from manu.case_state.store import CaseStore
 from manu.citations import verify_answer
 from manu.clock import india_today
@@ -44,6 +44,11 @@ class NoteRequest(BaseModel):
 
 class ClientRequest(BaseModel):
     name: str = Field(default="", max_length=160)
+
+
+class DraftRequest(BaseModel):
+    inputs: dict[str, str] = Field(default_factory=dict)
+    on: str | None = None
 
 
 class CheckRequest(BaseModel):
@@ -425,6 +430,35 @@ def create_app(
         filename = f"List of dates - {case.title or case.cnr}.docx".replace('"', "")
         return Response(
             list_of_dates.to_docx(case),
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    @app.get("/api/cases/{case_id}/drafts")
+    def draft_templates(case_id: str) -> dict:
+        return {"templates": drafting.available(need_case(case_id))}
+
+    def build_draft(case_id: str, template: str, request: DraftRequest) -> drafting.Draft:
+        try:
+            return drafting.build(template, need_case(case_id), request.inputs, as_of=as_of(request.on))
+        except KeyError as exc:
+            raise HTTPException(404, f"No template {template!r}.") from exc
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.post("/api/cases/{case_id}/drafts/{template}")
+    def draft(case_id: str, template: str, request: DraftRequest) -> dict:
+        return build_draft(case_id, template, request).as_dict()
+
+    @app.post("/api/cases/{case_id}/drafts/{template}/docx")
+    def draft_docx(case_id: str, template: str, request: DraftRequest) -> Response:
+        built = build_draft(case_id, template, request)
+        if not built.ready:
+            raise HTTPException(400, "Answer the remaining questions first: " + ", ".join(built.missing))
+        case = need_case(case_id)
+        filename = f"{built.title} - {case.title or case.cnr}.docx".replace('"', "")
+        return Response(
+            drafting.to_docx(built),
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
