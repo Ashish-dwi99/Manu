@@ -1,0 +1,1016 @@
+/* ==========================================================================
+   Manu — Chotu's workspace language, not Tura's learning one.
+
+   Carried over from Tura's Manu workspace (features/advocate/manu-workspace.css):
+   one continuous canvas, a quiet sidebar, tonal planes instead of borders and
+   elevation, one warm accent. Dropped: the learning identity (Plank glass,
+   hand-drawn fonts, playful motion). Added for a court: a serif for case
+   titles, tabular numerals for dates and days, and colour that means something
+   (red = liberty at stake, amber = a date, blue = category) and nothing else.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #121313;
+}
+
+.manu-shell {
+  --mn-ink: #f6f3ea;
+  --mn-muted: #a9afa7;
+  --mn-faint: #737a72;
+  --mn-line: rgba(255, 255, 255, 0.1);
+  --mn-fill: rgba(255, 255, 255, 0.06);
+  --mn-fill-hover: rgba(255, 255, 255, 0.1);
+  --mn-canvas: #121313;
+  --mn-side: #191b1a;
+  --mn-plane: #1b1e1c;
+  --mn-radius: 8px;
+
+  --mn-accent: #ea884b;
+  --mn-accent-ink: #1a0d06;
+  --mn-accent-soft: rgba(234, 136, 75, 0.14);
+  --mn-green: #96d7ae;
+  --mn-green-soft: rgba(150, 215, 174, 0.12);
+  --mn-amber: #e4c16b;
+  --mn-amber-soft: rgba(228, 193, 107, 0.13);
+  --mn-coral: #f07e6f;
+  --mn-coral-soft: rgba(240, 126, 111, 0.14);
+  --mn-blue: #86b8ff;
+  --mn-blue-soft: rgba(134, 184, 255, 0.13);
+  --mn-purple: #c7a4ff;
+  --mn-purple-soft: rgba(199, 164, 255, 0.13);
+
+  --mn-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mn-title: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+
+  background: var(--mn-canvas);
+  color: var(--mn-ink);
+  display: grid;
+  font-family: var(--mn-body);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  grid-template-columns: 248px minmax(0, 1fr);
+  height: 100vh;
+  line-height: 1.45;
+  overflow: hidden;
+}
+
+.manu-shell.themeLight {
+  --mn-ink: #17202a;
+  --mn-muted: #5d6b76;
+  --mn-faint: #8a97a1;
+  --mn-line: rgba(88, 106, 120, 0.16);
+  --mn-fill: rgba(23, 32, 42, 0.04);
+  --mn-fill-hover: rgba(23, 32, 42, 0.07);
+  --mn-canvas: #ffffff;
+  --mn-side: #f6f8f9;
+  --mn-plane: #f6f8f9;
+
+  --mn-accent: #b85f32;
+  --mn-accent-ink: #fff6ef;
+  --mn-accent-soft: rgba(184, 95, 50, 0.1);
+  --mn-green: #2f7d54;
+  --mn-green-soft: rgba(47, 125, 84, 0.1);
+  --mn-amber: #8a6420;
+  --mn-amber-soft: rgba(138, 100, 32, 0.11);
+  --mn-coral: #b0492f;
+  --mn-coral-soft: rgba(176, 73, 47, 0.1);
+  --mn-blue: #33607f;
+  --mn-blue-soft: rgba(51, 96, 127, 0.1);
+  --mn-purple: #6b4aa8;
+  --mn-purple-soft: rgba(107, 74, 168, 0.1);
+}
+
+.manu-shell button,
+.manu-shell input {
+  color: inherit;
+  font: inherit;
+}
+
+.manu-shell :focus-visible {
+  outline: 2px solid var(--mn-accent);
+  outline-offset: 2px;
+}
+
+.manu-shell h1,
+.manu-shell h2,
+.manu-shell h3,
+.manu-shell p {
+  margin: 0;
+}
+
+/* -- sidebar ------------------------------------------------------------- */
+
+.manu-sidebar {
+  background: var(--mn-side);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  padding: 16px 12px;
+}
+
+.manu-sidebar > header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  padding: 4px 6px 6px;
+}
+
+.manu-sidebar > header div {
+  display: grid;
+}
+
+.manu-sidebar > header strong {
+  font-family: var(--mn-title);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.manu-sidebar > header small {
+  color: var(--mn-muted);
+  font-size: 12px;
+}
+
+.manu-mark {
+  align-items: center;
+  background: var(--mn-accent-soft);
+  border-radius: 10px;
+  color: var(--mn-accent);
+  display: inline-flex;
+  font-family: var(--mn-title);
+  font-size: 20px;
+  font-weight: 700;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.manu-sidebar nav {
+  display: grid;
+  gap: 2px;
+}
+
+.manu-nav {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--mn-radius);
+  color: var(--mn-muted);
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.manu-nav:hover {
+  background: var(--mn-fill-hover);
+  color: var(--mn-ink);
+}
+
+.manu-nav.active {
+  background: var(--mn-fill);
+  color: var(--mn-ink);
+  font-weight: 600;
+}
+
+.manu-lens {
+  display: grid;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.manu-lens > span {
+  color: var(--mn-faint);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.manu-lens > div {
+  background: var(--mn-fill);
+  border-radius: var(--mn-radius);
+  display: grid;
+  gap: 2px;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+}
+
+.manu-lens button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--mn-muted);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  padding: 6px 8px;
+}
+
+.manu-lens button.on {
+  background: var(--mn-canvas);
+  color: var(--mn-ink);
+  font-weight: 600;
+}
+
+.manu-sidebar footer {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
+/* -- buttons ------------------------------------------------------------- */
+
+.manu-create {
+  align-items: center;
+  background: var(--mn-accent);
+  border: 0;
+  border-radius: 999px;
+  color: var(--mn-accent-ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 600;
+  gap: 8px;
+  justify-content: center;
+  padding: 9px 14px;
+}
+
+.manu-create:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.manu-quiet {
+  align-items: center;
+  background: var(--mn-fill);
+  border: 0;
+  border-radius: var(--mn-radius);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 7px;
+  padding: 7px 11px;
+}
+
+.manu-quiet:hover:not(:disabled) {
+  background: var(--mn-fill-hover);
+}
+
+.manu-quiet:disabled {
+  color: var(--mn-faint);
+  cursor: default;
+}
+
+.manu-icon {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--mn-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  justify-self: start;
+  width: 32px;
+}
+
+.manu-icon:hover {
+  background: var(--mn-fill-hover);
+  color: var(--mn-ink);
+}
+
+.spin {
+  animation: manuSpin 900ms linear infinite;
+}
+
+@keyframes manuSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* -- page ---------------------------------------------------------------- */
+
+.manu-main {
+  min-height: 0;
+  overflow: auto;
+}
+
+.manu-page {
+  margin: 0 auto;
+  max-width: 1080px;
+  padding: 28px 32px 64px;
+}
+
+.manu-page-head {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.manu-page-head h1,
+.manu-case-head h1 {
+  font-family: var(--mn-title);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+}
+
+.manu-page-actions {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.manu-eyebrow {
+  color: var(--mn-muted);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px !important;
+  text-transform: uppercase;
+}
+
+.manu-muted {
+  color: var(--mn-muted);
+}
+
+.manu-error {
+  color: var(--mn-coral);
+}
+
+.manu-pad {
+  padding: 24px 0;
+}
+
+.manu-strong {
+  font-weight: 600;
+}
+
+/* -- list rows ------------------------------------------------------------ */
+
+.manu-list {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.manu-row {
+  align-items: start;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  gap: 16px;
+  padding: 14px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.manu-row:hover {
+  background: var(--mn-fill);
+}
+
+.manu-row-chevron {
+  align-self: center;
+  color: var(--mn-faint);
+  flex: none;
+}
+
+.manu-serial {
+  color: var(--mn-faint);
+  flex: none;
+  font-size: 13px;
+  padding-top: 2px;
+  text-align: right;
+  width: 22px;
+}
+
+.manu-row-body {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+  min-width: 0;
+}
+
+.manu-row-title {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.manu-row-title strong {
+  font-family: var(--mn-title);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.manu-row-meta,
+.manu-row-last {
+  color: var(--mn-muted);
+  font-size: 13px;
+}
+
+.manu-row-purpose {
+  font-size: 14px;
+}
+
+.manu-row-due {
+  color: var(--mn-amber);
+  font-size: 13px;
+}
+
+.manu-row-changed {
+  color: var(--mn-accent);
+  font-size: 13px;
+}
+
+.manu-custody {
+  align-self: center;
+  display: grid;
+  flex: none;
+  justify-items: end;
+  min-width: 96px;
+}
+
+.manu-custody strong {
+  font-size: 20px;
+}
+
+.manu-custody small {
+  color: var(--mn-muted);
+  font-size: 11px;
+}
+
+.manu-when {
+  display: grid;
+  flex: none;
+  gap: 1px;
+  width: 112px;
+}
+
+.manu-when small {
+  color: var(--mn-muted);
+  font-size: 12px;
+}
+
+.manu-when.overdue strong {
+  color: var(--mn-coral);
+}
+
+/* -- labels: colour that means something ----------------------------------- */
+
+.manu-labels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.manu-label {
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+}
+
+.tone-red .manu-label,
+.manu-label.tone-red {
+  background: var(--mn-coral-soft);
+  color: var(--mn-coral);
+}
+
+.manu-label.tone-blue {
+  background: var(--mn-blue-soft);
+  color: var(--mn-blue);
+}
+
+.manu-label.tone-amber {
+  background: var(--mn-amber-soft);
+  color: var(--mn-amber);
+}
+
+.manu-label.tone-purple {
+  background: var(--mn-purple-soft);
+  color: var(--mn-purple);
+}
+
+.manu-label.tone-green {
+  background: var(--mn-green-soft);
+  color: var(--mn-green);
+}
+
+.manu-label.tone-gray {
+  background: var(--mn-fill-hover);
+  color: var(--mn-muted);
+}
+
+/* -- changes feed --------------------------------------------------------- */
+
+.manu-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.manu-group {
+  background: var(--mn-plane);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.manu-group-title {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--mn-title);
+  font-size: 17px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.manu-group-title:hover {
+  color: var(--mn-accent);
+}
+
+.manu-group ul,
+.manu-history {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.manu-group li,
+.manu-history li {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: 132px 1fr;
+}
+
+.manu-group li small,
+.manu-history li small {
+  grid-column: 2;
+}
+
+.manu-event-kind {
+  color: var(--mn-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding-top: 1px;
+}
+
+.tone-accent .manu-event-kind {
+  color: var(--mn-accent);
+}
+
+.tone-amber .manu-event-kind {
+  color: var(--mn-amber);
+}
+
+.tone-coral .manu-event-kind {
+  color: var(--mn-coral);
+}
+
+/* -- case page ------------------------------------------------------------ */
+
+.manu-back {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--mn-muted);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 0;
+}
+
+.manu-back:hover {
+  color: var(--mn-ink);
+}
+
+.manu-case-head {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.manu-case-sub {
+  color: var(--mn-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13px;
+  gap: 16px;
+}
+
+.manu-case-grid {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+}
+
+.manu-case-col {
+  display: grid;
+  gap: 16px;
+}
+
+.manu-block {
+  background: var(--mn-plane);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+}
+
+.manu-block h2 {
+  color: var(--mn-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.manu-block h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.manu-block h3 small {
+  color: var(--mn-muted);
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+.manu-big {
+  font-family: var(--mn-title);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.manu-big small {
+  color: var(--mn-muted);
+  font-family: var(--mn-body);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.manu-quote {
+  border-left: 2px solid var(--mn-line);
+  color: var(--mn-ink);
+  font-family: var(--mn-title);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0;
+  padding: 2px 0 2px 12px;
+  white-space: pre-wrap;
+}
+
+.manu-source {
+  align-items: center;
+  color: var(--mn-muted);
+  display: flex;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.manu-obligations {
+  display: grid;
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.manu-obligations li {
+  display: grid;
+  gap: 5px;
+}
+
+.manu-obligation-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.manu-overdue {
+  color: var(--mn-coral);
+}
+
+.manu-verification {
+  font-size: 12px;
+}
+
+.manu-verification.v-lead {
+  color: var(--mn-amber);
+}
+
+.manu-verification.v-human_confirmed,
+.manu-verification.v-verified {
+  color: var(--mn-green);
+}
+
+.manu-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.manu-actions .manu-quiet {
+  font-size: 13px;
+  padding: 5px 9px;
+}
+
+.manu-closed summary {
+  color: var(--mn-muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.manu-closed ul {
+  color: var(--mn-muted);
+  display: grid;
+  font-size: 13px;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.manu-charges {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.manu-charges li {
+  display: grid;
+  gap: 2px;
+}
+
+.manu-warning,
+.manu-gap {
+  color: var(--mn-amber);
+  display: block;
+  font-size: 12.5px;
+}
+
+.manu-accused {
+  display: grid;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.manu-s479 {
+  background: var(--mn-fill);
+  border-radius: 10px;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.manu-s479.status-approaching,
+.manu-s479.status-crossed,
+.manu-s479.status-maximum_exceeded {
+  background: var(--mn-coral-soft);
+}
+
+.manu-s479.status-approaching .manu-strong,
+.manu-s479.status-crossed .manu-strong,
+.manu-s479.status-maximum_exceeded .manu-strong {
+  color: var(--mn-coral);
+}
+
+.manu-meter {
+  background: var(--mn-fill-hover);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.manu-meter span {
+  background: var(--mn-coral);
+  display: block;
+  height: 100%;
+}
+
+.manu-working {
+  color: var(--mn-muted);
+  display: grid;
+  font-size: 13px;
+  gap: 2px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.manu-footnote {
+  color: var(--mn-faint);
+  font-size: 12px;
+}
+
+.manu-facts {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.manu-fact {
+  background: var(--mn-fill);
+  border-radius: 10px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.manu-fact dl {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.manu-fact dl div {
+  display: grid;
+  gap: 0;
+}
+
+.manu-fact dt {
+  color: var(--mn-muted);
+  font-size: 12px;
+}
+
+.manu-fact dd {
+  margin: 0;
+}
+
+.manu-timeline {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.manu-timeline li {
+  border-left: 2px solid var(--mn-line);
+  display: grid;
+  gap: 1px;
+  padding-left: 12px;
+}
+
+.manu-timeline li.kind-next {
+  border-left-color: var(--mn-accent);
+}
+
+.manu-timeline time {
+  color: var(--mn-muted);
+  font-size: 12px;
+}
+
+.manu-history li {
+  grid-template-columns: 110px 1fr;
+}
+
+/* -- dialog --------------------------------------------------------------- */
+
+.manu-dialog-backdrop {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+}
+
+.manu-dialog {
+  background: var(--mn-canvas);
+  border-radius: 14px;
+  display: grid;
+  gap: 14px;
+  max-width: 440px;
+  padding: 20px;
+  width: 100%;
+}
+
+.manu-dialog header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.manu-dialog h2 {
+  font-family: var(--mn-title);
+  font-size: 20px;
+}
+
+.manu-dialog label {
+  color: var(--mn-muted);
+  display: grid;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.manu-dialog input {
+  background: var(--mn-fill);
+  border: 1px solid var(--mn-line);
+  border-radius: var(--mn-radius);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  padding: 10px 12px;
+}
+
+.manu-dialog footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* -- narrow screens: the sidebar becomes a top bar --------------------------- */
+
+@media (max-width: 860px) {
+  .manu-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .manu-sidebar {
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 16px;
+  }
+
+  .manu-sidebar > header small,
+  .manu-lens > span {
+    display: none;
+  }
+
+  .manu-sidebar nav {
+    display: flex;
+    order: 5;
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  .manu-sidebar footer {
+    align-items: center;
+    display: flex;
+    margin-left: auto;
+    margin-top: 0;
+  }
+
+  .manu-sidebar footer small {
+    display: none;
+  }
+
+  .manu-page {
+    padding: 18px 16px 48px;
+  }
+
+  .manu-case-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .manu-custody {
+    min-width: 64px;
+  }
+
+  .manu-group li,
+  .manu-history li {
+    grid-template-columns: 1fr;
+  }
+
+  .manu-group li small,
+  .manu-history li small {
+    grid-column: 1;
+  }
+}

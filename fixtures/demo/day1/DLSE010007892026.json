@@ -1,0 +1,56 @@
+{
+  "cnr": "DLSE010007892026",
+  "case_number": "Bail Appln. 1402/2026",
+  "court": "Court of ASJ-03, South District, Saket, New Delhi",
+  "title": "State v. Imran & Anr.",
+  "status": "Pending",
+  "stage": "investigation",
+  "next_date": "@+0",
+  "next_purpose": "Bail application",
+  "orders": [
+    {
+      "on": "@-7",
+      "title": "Notice on bail application",
+      "uri": "orders/DLSE010007892026/order-1.pdf",
+      "text": "Present: Ld. APP for the State with IO SI Pawan Kumar. Ld. counsel for the applicant. Issue notice. The IO shall file a status report regarding the stage of investigation before the next date. Put up on {@+0} for arguments on the bail application."
+    }
+  ],
+  "raw": {
+    "particulars": {
+      "case_type": "criminal",
+      "parties": [
+        {
+          "name": "State",
+          "role": "state"
+        },
+        {
+          "name": "Imran",
+          "role": "accused"
+        },
+        {
+          "name": "Salim",
+          "role": "accused"
+        }
+      ],
+      "charges": [
+        {
+          "text": "Sec. 309(4) BNS",
+          "offence_date": "@-60"
+        }
+      ],
+      "accused": [
+        {
+          "name": "Imran",
+          "gender": "male",
+          "first_offender": null,
+          "custody": [
+            {
+              "start": "@-58",
+              "place": "Tihar Jail No. 1"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

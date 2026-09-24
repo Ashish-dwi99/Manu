@@ -1,0 +1,83 @@
+{
+  "cnr": "DLSE010001232024",
+  "case_number": "SC/212/2024",
+  "court": "Court of ASJ-03, South District, Saket, New Delhi",
+  "title": "State v. Aamir Khan",
+  "status": "Pending",
+  "stage": "evidence",
+  "next_date": "@+7",
+  "next_purpose": "Arguments on bail application",
+  "hearings": [
+    {
+      "on": "@-44",
+      "purpose": "Prosecution evidence",
+      "business": "PW-3 examined; PW-4 bound down"
+    },
+    {
+      "on": "@-14",
+      "purpose": "Bail application",
+      "business": "Reply called from IO"
+    }
+  ],
+  "orders": [
+    {
+      "on": "@-44",
+      "title": "Evidence recorded",
+      "uri": "orders/DLSE010001232024/order-1.pdf",
+      "text": "Present: Ld. APP for the State. Accused produced from JC. PW-3 examined and discharged. PW-4 bound down. Put up on {@-14} for remaining prosecution evidence."
+    },
+    {
+      "on": "@-14",
+      "title": "Bail application \u2014 reply called",
+      "uri": "orders/DLSE010001232024/order-2.pdf",
+      "text": "Present: Ld. APP for the State. Accused produced from JC. Sh. R. Mehta, Ld. counsel for the accused.\nAn application for regular bail under Section 483 BNSS has been filed on behalf of the accused. The IO is directed to file a reply along with the previous involvement report of the accused within two weeks. Ld. counsel for the accused shall supply an advance copy of the application to the Ld. APP. Put up on {@+0} for arguments on the bail application."
+    },
+    {
+      "on": "@-1",
+      "title": "Adjourned \u2014 reply not filed",
+      "uri": "orders/DLSE010001232024/order-3.pdf",
+      "text": "Present: Ld. APP for the State. Accused produced from JC. Sh. R. Mehta, Ld. counsel for the accused.\nReply to the bail application has not been filed. The IO is directed to file the reply along with the previous involvement report on or before {@+5}, failing which the SHO concerned shall remain present in person. Put up on {@+7} for arguments on the bail application."
+    }
+  ],
+  "raw": {
+    "particulars": {
+      "case_type": "criminal",
+      "parties": [
+        {
+          "name": "State",
+          "role": "state"
+        },
+        {
+          "name": "Aamir Khan",
+          "role": "accused",
+          "advocate": "R. Mehta"
+        }
+      ],
+      "charges": [
+        {
+          "text": "Sec. 303(2) BNS",
+          "offence_date": "@-380"
+        },
+        {
+          "text": "Sec. 317(2) BNS",
+          "offence_date": "@-380"
+        }
+      ],
+      "chargesheet_filed_on": "@-290",
+      "accused": [
+        {
+          "name": "Aamir Khan",
+          "gender": "male",
+          "first_offender": true,
+          "other_pending_cases": 0,
+          "custody": [
+            {
+              "start": "@-360",
+              "place": "Tihar Jail No. 4"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

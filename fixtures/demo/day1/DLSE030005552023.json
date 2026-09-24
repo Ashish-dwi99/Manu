@@ -1,0 +1,34 @@
+{
+  "cnr": "DLSE030005552023",
+  "case_number": "CS SCJ 555/2023",
+  "court": "Court of Civil Judge-02, South District, Saket, New Delhi",
+  "title": "Sunita Devi v. Rajesh Kumar",
+  "status": "Referred to mediation",
+  "stage": "pleadings",
+  "next_date": "@+3",
+  "next_purpose": "Filing of written statement",
+  "orders": [
+    {
+      "on": "@-27",
+      "title": "Summons served",
+      "uri": "orders/DLSE030005552023/order-4.pdf",
+      "text": "Present: Ld. counsel for the plaintiff. Ld. counsel for the defendant. Defendant served. The defendant shall file the written statement within 30 days, with an advance copy to the plaintiff. Put up on {@+3} for filing of written statement and admission/denial of documents."
+    }
+  ],
+  "raw": {
+    "particulars": {
+      "case_type": "civil",
+      "parties": [
+        {
+          "name": "Sunita Devi",
+          "role": "petitioner",
+          "advocate": "A. Verma"
+        },
+        {
+          "name": "Rajesh Kumar",
+          "role": "respondent"
+        }
+      ]
+    }
+  }
+}

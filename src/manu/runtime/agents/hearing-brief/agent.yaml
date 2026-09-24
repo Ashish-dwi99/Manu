@@ -1,0 +1,9 @@
+version: 1
+agent:
+  name: "manu-hearing-brief"
+  system_prompt_path: ./system.md
+  system_prompt_args:
+    ROLE_ADDITIONAL: ""
+  tools: []
+  completion_gate_tools:
+    - manu_brief_save

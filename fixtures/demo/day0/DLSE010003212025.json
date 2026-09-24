@@ -1,0 +1,54 @@
+{
+  "cnr": "DLSE010003212025",
+  "case_number": "SC/41/2025",
+  "court": "Court of ASJ-03, South District, Saket, New Delhi",
+  "title": "State v. Deepak",
+  "status": "Pending",
+  "stage": "charge",
+  "next_date": "@+0",
+  "next_purpose": "Arguments on charge",
+  "orders": [
+    {
+      "on": "@-21",
+      "title": "Supply of documents",
+      "uri": "orders/DLSE010003212025/order-3.pdf",
+      "text": "Present: Ld. APP for the State. Accused on bail with counsel. Copies of the chargesheet supplied to the accused. Put up on {@+0} for arguments on charge."
+    }
+  ],
+  "raw": {
+    "particulars": {
+      "case_type": "criminal",
+      "parties": [
+        {
+          "name": "State",
+          "role": "state"
+        },
+        {
+          "name": "Deepak",
+          "role": "accused"
+        }
+      ],
+      "charges": [
+        {
+          "text": "Sec. 379 BNS",
+          "offence_date": "@-300"
+        }
+      ],
+      "chargesheet_filed_on": "@-120",
+      "accused": [
+        {
+          "name": "Deepak",
+          "gender": "male",
+          "first_offender": true,
+          "custody": [
+            {
+              "start": "@-300",
+              "end": "@-270",
+              "place": "Tihar Jail No. 2"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

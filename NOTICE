@@ -1,0 +1,13 @@
+Manu
+Copyright 2026 the Manu authors.
+
+src/manu/doc_intel/ is carried over from Tura (tura-learn/tura,
+apps/hub/chotu_hub/legal_agent/doc_intel), by the same authors.
+
+Manu runs agents on kimi-agent-rs (Apache-2.0; see its LICENSE and NOTICE in
+tura-learn/tura: subsystems/sankhya/third_party/kimi-agent-rs). It is invoked as a
+separate binary and is not distributed with this repository.
+
+No code from Mike (open-legal-products/mike, AGPL-3.0) or paperless-ngx (GPL-3.0) is
+included. Their designs were studied; see docs/mike-study.md and
+docs/document-intelligence.md.

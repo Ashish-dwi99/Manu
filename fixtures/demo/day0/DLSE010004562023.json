@@ -1,0 +1,57 @@
+{
+  "cnr": "DLSE010004562023",
+  "case_number": "SC/98/2023",
+  "court": "Court of ASJ-03, South District, Saket, New Delhi",
+  "title": "State v. Ritu Sharma",
+  "status": "Pending",
+  "stage": "evidence",
+  "next_date": "@+0",
+  "next_purpose": "Prosecution evidence",
+  "orders": [
+    {
+      "on": "@-30",
+      "title": "Summons to witnesses",
+      "uri": "orders/DLSE010004562023/order-7.pdf",
+      "text": "Present: Ld. APP for the State. Accused produced from JC. Complainant PW-1 not present despite service. Issue fresh summons to PW-1 and PW-2 through the SHO concerned. The SHO shall ensure service and presence of the witnesses on the next date. Put up on {@+0} for prosecution evidence."
+    }
+  ],
+  "raw": {
+    "particulars": {
+      "case_type": "criminal",
+      "parties": [
+        {
+          "name": "State",
+          "role": "state"
+        },
+        {
+          "name": "Ritu Sharma",
+          "role": "accused"
+        }
+      ],
+      "charges": [
+        {
+          "text": "Sec. 420 IPC",
+          "offence_date": "2023-11-10"
+        },
+        {
+          "text": "Sec. 406 IPC",
+          "offence_date": "2023-11-10"
+        }
+      ],
+      "chargesheet_filed_on": "2024-02-01",
+      "accused": [
+        {
+          "name": "Ritu Sharma",
+          "gender": "female",
+          "first_offender": null,
+          "custody": [
+            {
+              "start": "@-420",
+              "place": "Tihar Jail No. 6"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

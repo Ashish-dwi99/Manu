@@ -1,0 +1,11 @@
+version: 1
+agent:
+  name: "manu-order-reader"
+  system_prompt_path: ./system.md
+  system_prompt_args:
+    ROLE_ADDITIONAL: ""
+  tools: []
+  # The turn cannot end until the agent has either proposed obligations or
+  # explicitly proposed none (an empty list is a valid proposal).
+  completion_gate_tools:
+    - manu_obligations_propose
