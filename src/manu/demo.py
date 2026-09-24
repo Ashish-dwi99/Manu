@@ -12,6 +12,7 @@ from datetime import date
 from pathlib import Path
 
 from manu.case_state.store import CaseStore
+from manu.clock import india_today
 from manu.connectors import ConnectorLadder, DemoConnector
 from manu.watcher import CourtWatcher, WatchReport
 
@@ -19,7 +20,7 @@ FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "demo"
 
 
 def seed(store: CaseStore, *, today: date | None = None, fixtures: Path = FIXTURES) -> WatchReport:
-    today = today or date.today()
+    today = today or india_today()
     yesterday = CourtWatcher(
         store, ConnectorLadder([DemoConnector(fixtures / "day0", today=today)]), today=lambda: today
     )

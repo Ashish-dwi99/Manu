@@ -13,9 +13,10 @@ from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from manu import diary, list_of_dates
+from manu import diary, list_of_dates, messages
 from manu.case_state.store import CaseStore
 from manu.citations import verify_answer
+from manu.clock import india_today
 from manu.connectors import (
     BrowserPortalConnector,
     ConnectorLadder,
@@ -38,6 +39,10 @@ class NoteRequest(BaseModel):
     text: str = Field(min_length=1, max_length=4000)
     on: str | None = None
     author: str = Field(default="", max_length=160)
+
+
+class ClientRequest(BaseModel):
+    name: str = Field(default="", max_length=160)
 
 
 class ImportRequest(BaseModel):
@@ -88,7 +93,7 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
 
     def as_of(value: str | None) -> date:
         try:
-            return date.fromisoformat(value) if value else date.today()
+            return date.fromisoformat(value) if value else india_today()
         except ValueError as exc:
             raise HTTPException(400, "date must be YYYY-MM-DD") from exc
 
@@ -154,6 +159,27 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
         if not diary.delete_note(store, case_id, note_id):
             raise HTTPException(404, "note not found")
         return {"ok": True}
+
+    @app.put("/api/cases/{case_id}/client")
+    def set_client(case_id: str, request: ClientRequest) -> dict:
+        found = diary.set_client(store, case_id, request.name)
+        if found is None:
+            raise HTTPException(404, "case not found")
+        return found
+
+    # -- drafts a person sends ------------------------------------------------------------
+
+    @app.get("/api/messages/cause-list")
+    def message_cause_list(on: str | None = None) -> dict:
+        return messages.cause_list(store, as_of(on))
+
+    @app.get("/api/messages/due")
+    def message_due(on: str | None = None) -> dict:
+        return {"on": as_of(on).isoformat(), "updates": messages.due_updates(store, as_of(on))}
+
+    @app.get("/api/cases/{case_id}/messages/client-update")
+    def message_client_update(case_id: str, on: str | None = None) -> dict:
+        return messages.client_update(need_case(case_id), as_of(on))
 
     @app.get("/api/boards")
     def boards(on: str | None = None) -> dict:

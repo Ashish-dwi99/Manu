@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, Check, ChevronLeft, ChevronRight, CornerDownLeft, FolderOpen, Radio, RefreshCw, Search, UserSearch, X } from "lucide-react";
+import { ArrowUp, Check, ChevronLeft, ChevronRight, CornerDownLeft, FolderOpen, MessageCircle, Radio, RefreshCw, Search, UserSearch, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "../api.js";
 import { asCnr, boardHeadline, countdown, courtLabel, formatDate, formatLongDate, greeting, humanDates, shiftDay, timeAgo } from "../model.js";
 import { Labels, Loading, RowLink, SectionHead, navigate } from "./common.jsx";
+import { DraftSheet } from "./DraftSheet.jsx";
 
 export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
   const [day, setDay] = useState(today);
@@ -23,6 +24,8 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
     },
   });
   const search = useMutation({ mutationFn: (name) => api.findByAdvocate(name) });
+  const dueUpdates = useQuery({ queryKey: ["due-updates", today], queryFn: () => api.dueUpdates(today) });
+  const [draft, setDraft] = useState(null);
 
   useEffect(() => {
     if (focusSignal) input.current?.focus();
@@ -39,7 +42,19 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
       ? all.filter((c) => [c.title, c.case_number, c.cnr, c.court].some((v) => String(v || "").toLowerCase().includes(needle)))
       : [];
   const known = cnr ? all.find((c) => c.cnr === cnr) : null;
-  const needs = needsYou(upcoming.data?.items, all, today);
+  const needs = [
+    ...needsYou(upcoming.data?.items, all, today),
+    ...(dueUpdates.data?.updates || []).map((u) => ({
+      id: `update:${u.case_id}`,
+      case_id: u.case_id,
+      case_title: u.title,
+      when: "Client update",
+      tone: "",
+      title: `Hearing ${u.days_to_hearing === 2 ? "in two days" : "in a week"}: the update is drafted, ready for you to send`,
+      sub: `Listed ${formatDate(u.next_date)}`,
+      onClick: () => setDraft({ kind: "client", caseId: u.case_id }),
+    })),
+  ];
   const boardFor = (court) => boards.data?.boards.find((b) => b.court === court);
 
   const submit = () => {
@@ -152,6 +167,11 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
               <SectionHead
                 tools={
                   <>
+                    {isToday && entries.length ? (
+                      <button type="button" className="mn-text-btn" onClick={() => setDraft({ kind: "cause-list" })}>
+                        <MessageCircle size={14} /> Cause list message
+                      </button>
+                    ) : null}
                     <button type="button" className="mn-icon ghost tiny" aria-label="Previous day" onClick={() => setDay(shiftDay(day, -1))}>
                       <ChevronLeft size={15} />
                     </button>
@@ -187,7 +207,12 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
                 <SectionHead tools={<a className="mn-text-btn" href="#/week">This week →</a>}>Needs you</SectionHead>
                 <ol className="mn-rows">
                   {needs.map((item) => (
-                    <RowLink key={item.id} href={`#/c/${item.case_id}`} label={`Open ${item.case_title}`}>
+                    <RowLink
+                      key={item.id}
+                      href={item.onClick ? undefined : `#/c/${item.case_id}`}
+                      onClick={item.onClick}
+                      label={item.onClick ? `Draft client update for ${item.case_title}` : `Open ${item.case_title}`}
+                    >
                       <span className={`mn-when ${item.tone}`}>{item.when}</span>
                       <span className="mn-row-main">
                         <span className="mn-row-title plain">{item.title}</span>
@@ -208,6 +233,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
           </>
         )}
       </div>
+      {draft ? <DraftSheet kind={draft.kind} caseId={draft.caseId} today={today} onClose={() => setDraft(null)} /> : null}
     </section>
   );
 }

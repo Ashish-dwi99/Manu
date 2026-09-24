@@ -49,6 +49,10 @@ export const api = {
   limitationRules: () => request(`/api/law/limitation`),
   limitation: (body) => request(`/api/law/limitation`, json("POST", body)),
   addDeadline: (caseId, body) => request(`/api/cases/${caseId}/deadlines`, json("POST", body)),
+  causeListMessage: (on) => request(`/api/messages/cause-list?on=${on}`),
+  dueUpdates: (on) => request(`/api/messages/due?on=${on}`),
+  clientUpdate: (caseId, on) => request(`/api/cases/${caseId}/messages/client-update?on=${on}`),
+  setClient: (caseId, name) => request(`/api/cases/${caseId}/client`, json("PUT", { name })),
   brief: (caseId) => request(`/api/cases/${caseId}/brief`, json("POST")),
   ask: (caseId, question) => request(`/api/cases/${caseId}/ask`, json("POST", { question })),
 };

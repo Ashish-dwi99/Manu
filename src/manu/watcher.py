@@ -22,6 +22,7 @@ from datetime import UTC, date, datetime
 
 from manu.case_state.models import Accused, Case, CaseEvent, Charge, Hearing, Listing, OrderRecord, Party, SourceRef
 from manu.case_state.store import CaseStore, new_id
+from manu.clock import india_today
 from manu.connectors.base import ConnectorLadder, CourtOrder, CourtRecord, FetchResult, Tier
 from manu.orders import read_order
 
@@ -214,7 +215,7 @@ class WatchReport:
 
 
 class CourtWatcher:
-    def __init__(self, store: CaseStore, ladder: ConnectorLadder, *, today: Callable[[], date] = date.today) -> None:
+    def __init__(self, store: CaseStore, ladder: ConnectorLadder, *, today: Callable[[], date] = india_today) -> None:
         self.store = store
         self.ladder = ladder
         self.today = today

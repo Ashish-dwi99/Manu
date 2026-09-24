@@ -117,6 +117,14 @@ class Note(BaseModel):
     source: SourceRef
 
 
+class Client(BaseModel):
+    """Who the advocate reports to on this case. Entered by a person; Manu uses it only
+    to address a draft it never sends."""
+
+    name: str = ""
+    source: SourceRef
+
+
 class Listing(BaseModel):
     """Where a case sits on a cause list: the item number, the court hall, the bench."""
 
@@ -167,6 +175,7 @@ class Case(BaseModel):
     listing: Listing | None = None
     """Position on the cause list for `listing.on`, when a connector carries it."""
     notes: list[Note] = Field(default_factory=list)
+    client: Client | None = None
     tracked_by: list[str] = Field(default_factory=list)
     """Who follows this case: advocate ids, a court id, a client."""
     updated_at: datetime = Field(default_factory=utc_now)

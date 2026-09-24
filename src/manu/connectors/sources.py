@@ -27,6 +27,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 
+from manu.clock import india_today
 from manu.connectors.base import BoardStatus, CaseHit, ConnectorUnavailable, CourtRecord, Tier
 
 
@@ -73,7 +74,7 @@ class DemoConnector(FixtureConnector):
 
     def __init__(self, root: str | Path, *, today: date | None = None) -> None:
         super().__init__(root)
-        self.today = today or date.today()
+        self.today = today or india_today()
 
     def fetch(self, cnr: str) -> CourtRecord | None:
         path = self.root / f"{cnr}.json"

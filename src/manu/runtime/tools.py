@@ -25,6 +25,7 @@ from typing import Any
 from manu import diary, judge
 from manu.case_state.models import CaseEvent, Obligation
 from manu.case_state.store import CaseStore, new_id
+from manu.clock import india_today
 from manu.documents import DocumentStore
 from manu.runtime.wire import WireEvent, tool_error, tool_result
 
@@ -124,7 +125,7 @@ def case_tools(
 ) -> ToolRegistry:
     """The tools an agent gets for one case. Scoped: it cannot see or touch other cases."""
     registry = ToolRegistry(approver)
-    today = as_of or date.today()
+    today = as_of or india_today()
 
     def load():
         case = store.get(case_id)

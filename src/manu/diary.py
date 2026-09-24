@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from manu import judge
-from manu.case_state.models import Case, CaseEvent, Note, Obligation, SourceRef
+from manu.case_state.models import Case, CaseEvent, Client, Note, Obligation, SourceRef
 from manu.case_state.store import CaseStore, new_id
 from manu.law import limitation
 
@@ -46,6 +46,24 @@ def _note(n: Note) -> dict:
         "created_at": n.created_at.isoformat(),
         "source": {"kind": n.source.kind, "connector": n.source.connector, "verification": n.source.verification},
     }
+
+
+def _client(case: Case) -> dict | None:
+    if case.client is None:
+        return None
+    return {"name": case.client.name, "source": {"kind": case.client.source.kind}}
+
+
+def set_client(store: CaseStore, case_id: str, name: str) -> dict | None:
+    case = store.get(case_id)
+    if case is None:
+        return None
+    case.client = Client(
+        name=name.strip(),
+        source=SourceRef(kind="human", connector="human", verification="human_confirmed"),
+    )
+    store.put(case)
+    return _client(case)
 
 
 def _listing(case: Case) -> dict | None:
@@ -195,6 +213,7 @@ def case_detail(store: CaseStore, case_id: str, as_of: date) -> dict | None:
                 }
                 for o in sorted(case.orders, key=lambda o: o.on, reverse=True)
             ],
+            "client": _client(case),
             "notes": [_note(n) for n in sorted(case.notes, key=lambda n: (n.on, n.created_at), reverse=True)],
             "timeline": _timeline(case),
             "events": [_event(e) for e in store.events(case.id, limit=50)],

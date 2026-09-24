@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FileText, PanelRight, Radio, RefreshCw, ShieldAlert, Timer, Trash2, X } from "lucide-react";
+import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FileText, MessageCircle, PanelRight, Radio, RefreshCw, ShieldAlert, Timer, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api.js";
 import { boardHeadline, countdown, courtLabel, formatDate, humanDates, plural, s479Headline, timeAgo } from "../model.js";
 import { CitePill, Labels, Loading } from "./common.jsx";
+import { DraftSheet } from "./DraftSheet.jsx";
 import { MatchList, SourcePanel } from "./SourcePanel.jsx";
 
 const overlayPanel = () => typeof window !== "undefined" && window.innerWidth < 1180;
@@ -168,8 +169,15 @@ function NextHearing({ c, today }) {
   const boards = useQuery({ queryKey: ["boards", today], queryFn: () => api.boards(today), refetchInterval: 60_000, enabled: listedToday });
   const board = boards.data?.boards.find((b) => b.court === c.court);
   const mine = board?.yours.find((y) => y.case_id === c.id);
+  const [drafting, setDrafting] = useState(false);
   return (
     <section className="mn-next">
+      {c.next_date ? (
+        <button type="button" className="mn-btn small mn-next-action" onClick={() => setDrafting(true)}>
+          <MessageCircle size={14} /> Client update
+        </button>
+      ) : null}
+      {drafting ? <DraftSheet kind="client" caseId={c.id} today={today} onClose={() => setDrafting(false)} /> : null}
       <p className="mn-eyebrow">Next hearing</p>
       {c.next_date ? (
         <p className="mn-next-date">
