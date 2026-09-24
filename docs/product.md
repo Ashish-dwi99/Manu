@@ -37,7 +37,14 @@ and what you have to do, with the source.**
 5. **Liberty, for everyone**: 479 ALERT / URGENT / BAIL / WOMAN / JUVENILE / DATA GAP labels, Section
    479 and default-bail status with the working, and the six bail facts, each with a source
    or a gap, on the same case page an advocate and a judge both use. Never a recommendation.
-6. **Every line cites its words**: a numbered source on each fact opens the order or page
+6. **The day in court**: each listed matter shows its cause-list item and court hall;
+   the court's display board, where a connector reads it, says where the court is and how
+   many items are ahead. Your own notes of what happened sit beside the court's record,
+   marked as yours.
+7. **Import your practice**: search by advocate name and follow every case at once.
+8. **Limitation**: the last day for an appeal, revision, review, SLP or written statement,
+   by fixed rules with the working (see `law-engine.md`), saved to the to-do list.
+9. **Every line cites its words**: a numbered source on each fact opens the order or page
    at the quoted words, highlighted, and says whether they were found.
 
 ## What v1 deliberately does not do

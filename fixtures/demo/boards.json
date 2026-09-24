@@ -1,0 +1,20 @@
+{
+  "Court of ASJ-03, South District, Saket, New Delhi": {
+    "court_hall": "Court Room 312, Saket Courts Complex",
+    "sits": "10:30",
+    "lunch_from": "13:30",
+    "lunch_to": "14:00",
+    "rises": "16:30",
+    "minutes_per_item": 8,
+    "items": 40
+  },
+  "Court of Civil Judge-02, South District, Saket, New Delhi": {
+    "court_hall": "Court Room 105, Saket Courts Complex",
+    "sits": "10:00",
+    "lunch_from": "13:30",
+    "lunch_to": "14:00",
+    "rises": "16:30",
+    "minutes_per_item": 6,
+    "items": 55
+  }
+}

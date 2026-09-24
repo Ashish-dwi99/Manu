@@ -24,7 +24,7 @@ from manu.connectors import (
 )
 from manu.doc_intel import grammars
 from manu.documents import DocumentError, DocumentStore
-from manu.law import default_bail, s479
+from manu.law import default_bail, limitation, s479
 from manu.law.offences import OFFENCES
 from manu.watcher import CourtWatcher
 
@@ -32,6 +32,25 @@ from manu.watcher import CourtWatcher
 class TrackRequest(BaseModel):
     cnr: str = Field(min_length=16, max_length=24)
     tracked_by: str = Field(default="", max_length=160)
+
+
+class NoteRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    on: str | None = None
+    author: str = Field(default="", max_length=160)
+
+
+class ImportRequest(BaseModel):
+    cnrs: list[str] = Field(min_length=1, max_length=200)
+    tracked_by: str = Field(default="", max_length=160)
+
+
+class LimitationRequest(BaseModel):
+    rule: str
+    start: str
+    copy_applied: str | None = None
+    copy_ready: str | None = None
+    on: str | None = None
 
 
 class AskRequest(BaseModel):
@@ -122,6 +141,99 @@ def create_app(store: CaseStore | None = None, ladder: ConnectorLadder | None = 
         if result is None:
             raise HTTPException(404, "obligation not found")
         return result
+
+    @app.post("/api/cases/{case_id}/notes")
+    def add_note(case_id: str, request: NoteRequest) -> dict:
+        note = diary.add_note(store, case_id, request.text, on=as_of(request.on), author=request.author)
+        if note is None:
+            raise HTTPException(404, "case not found")
+        return note
+
+    @app.delete("/api/cases/{case_id}/notes/{note_id}")
+    def delete_note(case_id: str, note_id: str) -> dict:
+        if not diary.delete_note(store, case_id, note_id):
+            raise HTTPException(404, "note not found")
+        return {"ok": True}
+
+    @app.get("/api/boards")
+    def boards(on: str | None = None) -> dict:
+        return diary.boards(store, watcher.ladder, as_of(on))
+
+    @app.get("/api/import/advocate")
+    def find_by_advocate(name: str) -> dict:
+        name = name.strip()
+        if len(name) < 3:
+            raise HTTPException(400, "Enter at least three letters of the advocate's name.")
+        hits, connector, attempts = watcher.ladder.search_advocate(name)
+        following = {c.cnr for c in store.all()}
+        return {
+            "name": name,
+            "connector": connector,
+            "hits": [{**h.model_dump(mode="json"), "following": h.cnr in following} for h in hits],
+            "attempts": [{"connector": a.connector, "outcome": a.outcome} for a in attempts],
+        }
+
+    @app.post("/api/cases/import")
+    def import_cases(request: ImportRequest) -> dict:
+        followed: list[str] = []
+        failed: dict[str, str] = {}
+        for raw in dict.fromkeys(request.cnrs):
+            cnr = raw.strip().upper().replace("-", "")
+            if not grammars.find_cnr(cnr):
+                failed[raw] = "Not a CNR."
+                continue
+            case, events = watcher.track(cnr, tracked_by=request.tracked_by)
+            problem = next((e.summary for e in events if e.kind == "fetch_failed"), None)
+            if problem:
+                failed[cnr] = problem
+            followed.append(case.id)
+        return {"followed": followed, "failed": failed}
+
+    @app.get("/api/law/limitation")
+    def limitation_rules() -> dict:
+        return {
+            "rules": [
+                {
+                    "key": r.key,
+                    "title": r.title,
+                    "group": r.group,
+                    "provision": r.provision,
+                    "days": r.days,
+                    "reckoned_from": r.reckoned_from,
+                    "copy_exclusion": r.copy_exclusion,
+                    "outer_days": r.outer_days,
+                    "reviewed": r.reviewed,
+                }
+                for r in limitation.RULES.values()
+            ]
+        }
+
+    def compute_limitation(request: LimitationRequest) -> limitation.LimitationResult:
+        def optional(value: str | None):
+            return as_of(value) if value else None
+
+        try:
+            return limitation.compute(
+                request.rule,
+                as_of(request.start),
+                as_of=as_of(request.on),
+                copy_applied=optional(request.copy_applied),
+                copy_ready=optional(request.copy_ready),
+            )
+        except KeyError as exc:
+            raise HTTPException(400, f"Unknown limitation rule {request.rule!r}.") from exc
+
+    @app.post("/api/law/limitation")
+    def limitation_compute(request: LimitationRequest) -> dict:
+        return diary.limitation_view(compute_limitation(request))
+
+    @app.post("/api/cases/{case_id}/deadlines")
+    def add_deadline(case_id: str, request: LimitationRequest) -> dict:
+        result = compute_limitation(request)
+        obligation = diary.add_deadline(store, case_id, result)
+        if obligation is None:
+            raise HTTPException(404, "case not found")
+        return {"obligation": obligation, "limitation": diary.limitation_view(result)}
 
     @app.post("/api/watch/run")
     def run_watch() -> dict:

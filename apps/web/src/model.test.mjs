@@ -76,3 +76,11 @@ import { humanDates } from "./model.js";
 test("ISO dates in reasons read as Indian dates", () => {
   assert.equal(humanDates("crossed on 2026-09-28."), `crossed on ${formatDate("2026-09-28")}.`);
 });
+
+import { boardHeadline, timeAgo } from "./model.js";
+
+test("the board speaks plainly and never pretends to know", () => {
+  assert.equal(boardHeadline({ state: "in_session", current_item: "9", note: "" }), "Now at item 9");
+  assert.equal(boardHeadline({ state: "unknown" }), "Display board not readable here");
+  assert.equal(timeAgo("2026-09-24T10:00:00Z", new Date("2026-09-24T10:05:00Z")), "5 min ago");
+});

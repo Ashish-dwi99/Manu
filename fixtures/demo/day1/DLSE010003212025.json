@@ -25,7 +25,8 @@
         },
         {
           "name": "Deepak",
-          "role": "accused"
+          "role": "accused",
+          "advocate": "S. Kapoor"
         }
       ],
       "charges": [
@@ -50,5 +51,12 @@
         }
       ]
     }
+  },
+  "listing": {
+    "on": "@+0",
+    "item": "22",
+    "court_hall": "Court Room 312, Saket Courts Complex",
+    "bench": "ASJ-03",
+    "list_type": "Regular"
   }
 }

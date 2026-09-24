@@ -22,9 +22,12 @@ add a CNR and Manu gives you everything the record holds. Nobody switches modes.
 | Screen | What it shows |
 | --- | --- |
 | **Today** | One box: paste a CNR to follow a case, or find one of yours. Below it, what is listed today (the diary and the cause list are the same list), and what needs you: liberty dates and directions due |
+| **Board** | On today's list: item number and court hall per matter, and the court's live display board with how many items are ahead of you (demo court simulates one) |
+| **Import** | Type an advocate's name in the same box; follow every case found in one go |
 | **This week** | Hearings and directions for the next seven days, by day |
 | **What changed** | New orders, moved dates, directions found, each with its source |
 | **Case** | Next hearing, last order, what somebody has to do, and for criminal matters the s.479 BNSS and default-bail arithmetic with the working and the six bail facts (never a recommendation). Ask the case anything underneath |
+| **Notes and deadlines** | Your own notes of each hearing, marked as yours. A limitation calculator (appeal, revision, review, SLP, written statement) with the working, saved to the to-do |
 | **Source panel** | Every line on a case carries a numbered source. Clicking it opens the order or page at those words, highlighted, with whether the words are really there. Papers, list of dates (.docx) and timeline live in the same panel |
 
 The interface follows the Chotu workspace (root): floating sheets on a hatched ground,
@@ -40,6 +43,11 @@ cd apps/web && npm install && npm run dev   # UI on http://127.0.0.1:5180
 ```
 
 Or `cd apps/web && npm run build` once, and `manu serve --demo` serves the built UI too.
+
+The demo court's display board follows the clock (sits 10:30, rises 16:30 IST). To see it
+mid-session at any hour: `MANU_DEMO_BOARD_AT=11:42 uv run manu serve --demo`. Try
+importing by advocate name with "R. Mehta": two of the demo court's cases are not yet
+followed.
 
 The demo court has five cases in Saket, New Delhi. It seeds "yesterday" and then runs
 this morning's watch, so the diary opens on real changes: an adjourned bail hearing with a

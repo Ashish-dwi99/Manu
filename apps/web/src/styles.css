@@ -212,6 +212,22 @@ body {
   background: var(--hover);
 }
 
+.mn-btn.ink {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--sheet);
+}
+
+.mn-btn.ink:hover:not(:disabled) {
+  background: var(--ink);
+  opacity: 0.88;
+}
+
+.mn-btn:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .mn-btn.small {
   font-size: 12.5px;
   padding: 4px 11px;
@@ -826,6 +842,151 @@ kbd {
   color: var(--ink);
 }
 
+/* -- cause list: item numbers and display boards -------------------------------------- */
+
+.mn-item {
+  display: grid;
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 500;
+  justify-items: center;
+  line-height: 1.1;
+  min-width: 40px;
+}
+
+.mn-item small {
+  color: var(--ink-faint);
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mn-item.near {
+  color: var(--accent);
+}
+
+.mn-row-memo {
+  border-left: 2px solid var(--line-strong);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-style: italic;
+  margin-top: 2px;
+  overflow: hidden;
+  padding-left: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mn-boards {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0 6px;
+}
+
+.mn-board {
+  align-items: center;
+  background: var(--sheet-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 4px 16px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  padding: 10px 14px;
+}
+
+.mn-board.live {
+  border-color: var(--accent-line);
+}
+
+.mn-board-court {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 14px;
+  font-weight: 500;
+  gap: 4px 8px;
+}
+
+.mn-board-court small {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.mn-board-now {
+  font-size: 14px;
+}
+
+.mn-live {
+  animation: mn-pulse 1.6s ease-in-out infinite;
+  color: var(--accent);
+}
+
+@keyframes mn-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.mn-board-yours {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.mn-board-yours a {
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  display: grid;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  justify-items: center;
+  line-height: 1.2;
+  min-width: 52px;
+  padding: 3px 8px;
+}
+
+.mn-board-yours a small {
+  color: var(--ink-faint);
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 400;
+}
+
+.mn-board-yours a.near {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.mn-board-yours a.passed {
+  opacity: 0.5;
+}
+
+.mn-board-src {
+  color: var(--ink-faint);
+  grid-column: 1 / 4;
+}
+
+.mn-pick {
+  cursor: pointer;
+}
+
+.mn-pick input {
+  accent-color: var(--ink);
+  height: 16px;
+  width: 16px;
+}
+
+.mn-pick.done {
+  cursor: default;
+  opacity: 0.6;
+}
+
 /* -- labels ------------------------------------------------------------------------------- */
 
 .mn-labels {
@@ -1054,6 +1215,43 @@ kbd {
   margin: 4px 0 0;
 }
 
+.mn-next-listing {
+  align-items: baseline;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13.5px;
+  gap: 4px 10px;
+  margin: 12px 0 0;
+  padding-top: 10px;
+}
+
+.mn-next-listing b {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.mn-next-listing small,
+.mn-next-board small {
+  color: var(--ink-faint);
+}
+
+.mn-next-board {
+  align-items: center;
+  color: var(--ink-soft);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13.5px;
+  gap: 6px;
+  margin: 6px 0 0;
+}
+
+.mn-next-board b {
+  color: var(--accent);
+  font-weight: 500;
+}
+
 .mn-order-card {
   border-left: 2px solid var(--line-strong);
   display: grid;
@@ -1186,6 +1384,227 @@ kbd {
   font-size: 11.5px;
   font-weight: 500;
   text-transform: uppercase;
+}
+
+/* notes */
+
+.mn-note-form {
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px 8px 14px;
+}
+
+.mn-note-form:focus-within {
+  border-color: var(--ink-faint);
+}
+
+.mn-note-form textarea {
+  background: transparent;
+  border: 0;
+  field-sizing: content;
+  font-size: 15px;
+  min-height: 26px;
+  outline: none;
+  resize: none;
+}
+
+.mn-note-form textarea::placeholder {
+  color: var(--ink-faint);
+}
+
+.mn-note-form-foot {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.mn-note-form-foot input[type="date"],
+.mn-lim-form input[type="date"],
+.mn-lim-form select {
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  padding: 3px 6px;
+}
+
+.mn-notes {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mn-notes li {
+  align-items: start;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  padding: 10px 2px;
+}
+
+.mn-notes time {
+  color: var(--ink-faint);
+  padding-top: 2px;
+}
+
+.mn-notes p {
+  font-size: 14.5px;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.mn-notes .mn-icon {
+  opacity: 0;
+}
+
+.mn-notes li:hover .mn-icon,
+.mn-notes .mn-icon:focus-visible {
+  opacity: 1;
+}
+
+/* limitation */
+
+.mn-limitation-open {
+  align-items: flex-start;
+  background: none;
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.mn-limitation-open svg {
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.mn-limitation-open span {
+  display: grid;
+  font-weight: 500;
+}
+
+.mn-limitation-open small {
+  color: var(--ink-faint);
+  font-size: 12.5px;
+  font-weight: 400;
+}
+
+.mn-limitation-open:hover {
+  background: var(--hover);
+}
+
+.mn-limitation .mn-part-title {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.mn-limitation .mn-part-title .mn-icon {
+  margin-left: auto;
+}
+
+.mn-lim-form {
+  display: grid;
+  gap: 12px;
+}
+
+.mn-lim-form label {
+  color: var(--ink-soft);
+  display: grid;
+  font-size: 12.5px;
+  gap: 4px;
+}
+
+.mn-lim-form label small {
+  color: var(--ink-faint);
+}
+
+.mn-lim-form select,
+.mn-lim-form input[type="date"] {
+  font-size: 14px;
+  padding: 7px 9px;
+}
+
+.mn-lim-copy {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.mn-lim-result {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  gap: 8px;
+  padding: 14px 18px;
+}
+
+.mn-lim-result.amber {
+  background: var(--amber-soft);
+  border-color: transparent;
+}
+
+.mn-lim-result.red {
+  background: var(--red-soft);
+  border-color: transparent;
+}
+
+.mn-lim-result .mn-eyebrow {
+  margin: 0;
+}
+
+.mn-lim-date {
+  font-size: 24px;
+  font-weight: 540;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.mn-lim-date span {
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  margin-left: 8px;
+}
+
+.mn-lim-result.red .mn-lim-date {
+  color: var(--red);
+}
+
+.mn-lim-result details summary {
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.mn-lim-result .mn-working {
+  padding: 8px 0 0 22px;
+}
+
+.mn-lim-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.mn-working.boxed {
+  background: var(--sheet-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px 14px 34px;
 }
 
 /* liberty */
@@ -1666,7 +2085,7 @@ kbd {
 .mn-source-meta {
   color: var(--ink-faint);
   margin: 0;
-  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .mn-quote {
@@ -2032,5 +2451,21 @@ p.small {
   .mn-when,
   .mn-kind {
     min-width: 72px;
+  }
+
+  .mn-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mn-board-yours {
+    justify-content: flex-start;
+  }
+
+  .mn-board-src {
+    grid-column: 1;
+  }
+
+  .mn-lim-copy {
+    grid-template-columns: 1fr;
   }
 }

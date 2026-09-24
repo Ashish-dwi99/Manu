@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FileText, PanelRight, RefreshCw, ShieldAlert, X } from "lucide-react";
+import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FileText, PanelRight, Radio, RefreshCw, ShieldAlert, Timer, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api.js";
-import { countdown, courtLabel, formatDate, humanDates, plural, s479Headline } from "../model.js";
+import { boardHeadline, countdown, courtLabel, formatDate, humanDates, plural, s479Headline, timeAgo } from "../model.js";
 import { CitePill, Labels, Loading } from "./common.jsx";
 import { MatchList, SourcePanel } from "./SourcePanel.jsx";
 
@@ -103,6 +103,8 @@ export function CaseView({ caseId, today }) {
                   <NextHearing c={c} today={today} />
                   <LastOrder c={c} cite={citeProps("order")} onRead={() => openCite(cites, numberOf("order") - 1)} />
                   <Directions c={c} today={today} citeProps={citeProps} />
+                  <Notes c={c} today={today} />
+                  <Limitation c={c} today={today} />
                   {c.criminal ? <Liberty criminal={c.criminal} today={today} /> : null}
                   {c.bail_facts?.applicable ? <BailFacts facts={c.bail_facts} /> : null}
                   <Conversation c={c} openCite={openCite} openTab={(tab) => {
@@ -121,6 +123,11 @@ export function CaseView({ caseId, today }) {
   );
 }
 
+/** Open directions and deadlines, soonest first; undated last. */
+function openByDue(obligations) {
+  return obligations.filter((o) => o.status === "open").sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
+}
+
 /** Every source on the case page, numbered in reading order: last order, then open directions. */
 function caseCites(c) {
   const out = [];
@@ -135,7 +142,11 @@ function caseCites(c) {
       label: `Order dated ${formatDate(c.last_order.on)}`,
     });
   }
-  for (const o of c.obligations.filter((x) => x.status === "open")) {
+  for (const o of openByDue(c.obligations)) {
+    if (o.source.kind === "human") {
+      out.push({ key: o.id, kind: "working", title: o.what, quote: o.source.quote, verification: "human_confirmed", label: "Worked out from dates you entered" });
+      continue;
+    }
     const on = orderOn(o.source.uri);
     out.push({
       key: o.id,
@@ -153,6 +164,10 @@ function caseCites(c) {
 /* -- the brief -------------------------------------------------------------------------- */
 
 function NextHearing({ c, today }) {
+  const listedToday = c.next_date === today;
+  const boards = useQuery({ queryKey: ["boards", today], queryFn: () => api.boards(today), refetchInterval: 60_000, enabled: listedToday });
+  const board = boards.data?.boards.find((b) => b.court === c.court);
+  const mine = board?.yours.find((y) => y.case_id === c.id);
   return (
     <section className="mn-next">
       <p className="mn-eyebrow">Next hearing</p>
@@ -164,6 +179,21 @@ function NextHearing({ c, today }) {
         <p className="mn-next-date">{c.stage === "disposed" ? "Disposed" : "Not listed yet"}</p>
       )}
       {c.next_purpose ? <p className="mn-next-purpose">For {c.next_purpose.charAt(0).toLowerCase() + c.next_purpose.slice(1)}</p> : null}
+      {c.listing ? (
+        <p className="mn-next-listing">
+          <b className="mono">Item {c.listing.item || "—"}</b>
+          {[c.listing.court_hall, c.listing.list_type ? `${c.listing.list_type} list` : ""].filter(Boolean).join(" · ")}
+          <small className="mono"> · cause list via {c.listing.source.connector}</small>
+        </p>
+      ) : null}
+      {board ? (
+        <p className={`mn-next-board ${board.state === "in_session" ? "live" : ""}`}>
+          <Radio size={14} className={board.state === "in_session" ? "mn-live" : ""} />
+          {boardHeadline(board)}
+          {mine?.ahead != null ? <b>{mine.ahead > 0 ? ` · ${mine.ahead} ahead of you` : mine.ahead === 0 ? " · your matter is on" : " · your item has been called"}</b> : null}
+          <small className="mono">{board.connector ? ` via ${board.connector} · ${timeAgo(board.as_of)}` : ` ${board.unavailable}`}</small>
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -202,7 +232,7 @@ function Directions({ c, today, citeProps }) {
     mutationFn: ({ id, status }) => api.setObligation(c.id, id, status),
     onSuccess: () => queryClient.invalidateQueries(),
   });
-  const open = c.obligations.filter((o) => o.status === "open").sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
+  const open = openByDue(c.obligations);
   const closed = c.obligations.filter((o) => o.status !== "open");
   return (
     <section className="mn-part">
@@ -261,6 +291,222 @@ function Directions({ c, today, citeProps }) {
             ))}
           </ul>
         </details>
+      ) : null}
+    </section>
+  );
+}
+
+/* -- notes ------------------------------------------------------------------------------- */
+
+function Notes({ c, today }) {
+  const queryClient = useQueryClient();
+  const [text, setText] = useState("");
+  const [on, setOn] = useState(today);
+  const [all, setAll] = useState(false);
+  const add = useMutation({
+    mutationFn: () => api.addNote(c.id, text.trim(), on),
+    onSuccess: () => {
+      setText("");
+      queryClient.invalidateQueries();
+    },
+  });
+  const remove = useMutation({ mutationFn: (id) => api.deleteNote(c.id, id), onSuccess: () => queryClient.invalidateQueries() });
+  const shown = all ? c.notes : c.notes.slice(0, 3);
+  return (
+    <section className="mn-part">
+      <h2 className="mn-part-title">
+        Your notes <span>· what happened in court, in your words</span>
+      </h2>
+      <form
+        className="mn-note-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (text.trim()) add.mutate();
+        }}
+      >
+        <textarea
+          rows={1}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={c.next_date === today ? "What happened today? e.g. APP sought time, IO absent, arguments part-heard" : "Add a note for the diary"}
+          aria-label="New note"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && text.trim()) add.mutate();
+          }}
+        />
+        <div className="mn-note-form-foot">
+          <label className="mn-chip-flat">
+            For
+            <input type="date" value={on} max={today} onChange={(e) => setOn(e.target.value || today)} aria-label="Court day this note is about" />
+          </label>
+          <button type="submit" className="mn-btn small" disabled={!text.trim() || add.isPending}>
+            {add.isPending ? "Saving…" : "Save note"}
+          </button>
+        </div>
+      </form>
+      {add.error ? <p className="mn-error">{String(add.error.message)}</p> : null}
+      {c.notes.length ? (
+        <ul className="mn-notes">
+          {shown.map((n) => (
+            <li key={n.id}>
+              <time className="mono">{formatDate(n.on)}</time>
+              <p>{n.text}</p>
+              <button type="button" className="mn-icon tiny ghost" aria-label="Delete note" title="Delete note" onClick={() => remove.mutate(n.id)}>
+                <Trash2 size={13} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {c.notes.length > 3 ? (
+        <button type="button" className="mn-text-btn" onClick={() => setAll(!all)}>
+          {all ? "Show fewer" : `Show all ${c.notes.length} notes`}
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+/* -- limitation ------------------------------------------------------------------------ */
+
+const GROUPS = { civil: "Civil", criminal: "Criminal", supreme_court: "Supreme Court", pleadings: "Pleadings" };
+
+const LIMITATION_STATUS = {
+  running: "",
+  due_soon: "amber",
+  last_day: "red",
+  extension_only: "red",
+  expired: "red",
+};
+
+function Limitation({ c, today }) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const rules = useQuery({ queryKey: ["limitation-rules"], queryFn: api.limitationRules, enabled: open, staleTime: Infinity });
+  const lastOrder = c.orders[0]?.on || today;
+  const [form, setForm] = useState({ rule: "", start: lastOrder, copy_applied: "", copy_ready: "" });
+  const rule = rules.data?.rules.find((r) => r.key === form.rule);
+  const body = { rule: form.rule, start: form.start, copy_applied: form.copy_applied || null, copy_ready: form.copy_ready || null, on: today };
+  const result = useQuery({
+    queryKey: ["limitation", body],
+    queryFn: () => api.limitation(body),
+    enabled: open && !!form.rule && !!form.start,
+  });
+  const save = useMutation({
+    mutationFn: () => api.addDeadline(c.id, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      setOpen(false);
+      setForm({ rule: "", start: lastOrder, copy_applied: "", copy_ready: "" });
+    },
+  });
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  const r = result.data;
+  const fromOrder = c.orders.find((o) => o.on === form.start);
+
+  if (!open) {
+    return (
+      <section className="mn-part">
+        <button type="button" className="mn-limitation-open" onClick={() => setOpen(true)}>
+          <Timer size={16} />
+          <span>
+            Work out a deadline
+            <small>Appeal, revision, review, SLP, written statement: the last day under the Limitation Act, with the working</small>
+          </span>
+        </button>
+      </section>
+    );
+  }
+  return (
+    <section className="mn-part mn-limitation">
+      <h2 className="mn-part-title">
+        Limitation <span>· fixed rules, working shown; you choose what you are filing</span>
+        <button type="button" className="mn-icon tiny ghost" aria-label="Close" onClick={() => setOpen(false)}>
+          <X size={14} />
+        </button>
+      </h2>
+      <div className="mn-lim-form">
+        <label>
+          What are you filing?
+          <select value={form.rule} onChange={set("rule")}>
+            <option value="">Choose…</option>
+            {Object.entries(GROUPS).map(([group, label]) => (
+              <optgroup key={group} label={label}>
+                {(rules.data?.rules || [])
+                  .filter((x) => x.group === group)
+                  .map((x) => (
+                    <option key={x.key} value={x.key}>
+                      {x.title} — {x.days} days
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+        <label>
+          {rule ? `From ${rule.reckoned_from}` : "From"}
+          <select value={fromOrder ? form.start : "other"} onChange={(e) => setForm({ ...form, start: e.target.value === "other" ? "" : e.target.value })}>
+            {c.orders.map((o) => (
+              <option key={o.on} value={o.on}>
+                Order {formatDate(o.on)}
+                {o.title ? ` — ${o.title}` : ""}
+              </option>
+            ))}
+            <option value="other">Another date…</option>
+          </select>
+          {!fromOrder ? <input type="date" value={form.start} onChange={set("start")} aria-label="Start date" /> : null}
+          <small>{fromOrder ? "Date from the court record" : "Date you entered"}</small>
+        </label>
+        {rule?.copy_exclusion ? (
+          <div className="mn-lim-copy">
+            <label>
+              Certified copy applied
+              <input type="date" value={form.copy_applied} onChange={set("copy_applied")} />
+            </label>
+            <label>
+              Copy ready
+              <input type="date" value={form.copy_ready} onChange={set("copy_ready")} />
+            </label>
+          </div>
+        ) : null}
+      </div>
+
+      {r ? (
+        <div className={`mn-lim-result ${LIMITATION_STATUS[r.status]}`}>
+          <p className="mn-eyebrow">{r.rule.provision}</p>
+          <p className="mn-lim-date">
+            {r.status === "extension_only" ? "Only with the court's leave, by" : "File by"} {formatDate(r.status === "extension_only" ? r.outer_day : r.file_by)}
+            <span>
+              {r.status === "expired"
+                ? `period ran ${-r.days_left} ${r.days_left === -1 ? "day" : "days"} ago`
+                : r.days_left === 0
+                  ? "today"
+                  : `in ${r.days_left} ${r.days_left === 1 ? "day" : "days"}`}
+            </span>
+          </p>
+          <details>
+            <summary>Working</summary>
+            <ol className="mn-working">
+              {r.working.map((line) => (
+                <li key={line}>{humanDates(line)}</li>
+              ))}
+            </ol>
+          </details>
+          {[...r.gaps, ...r.flags].map((w) => (
+            <p key={w} className="mn-warning">
+              {humanDates(w)}
+            </p>
+          ))}
+          <div className="mn-lim-actions">
+            <button type="button" className="mn-btn small ink" onClick={() => save.mutate()} disabled={save.isPending || r.status === "expired"}>
+              {save.isPending ? "Adding…" : "Add to to-do"}
+            </button>
+            <span className="mn-faint small">Check against the Bare Act before relying on it.</span>
+          </div>
+          {save.error ? <p className="mn-error">{String(save.error.message)}</p> : null}
+        </div>
+      ) : result.error ? (
+        <p className="mn-error">{String(result.error.message)}</p>
       ) : null}
     </section>
   );

@@ -1,0 +1,40 @@
+{
+  "cnr": "DLSE010006782025",
+  "case_number": "SC/67/2025",
+  "court": "Court of ASJ-03, South District, Saket, New Delhi",
+  "title": "State v. Vikas Yadav",
+  "status": "Pending",
+  "stage": "charge",
+  "next_date": "@+2",
+  "next_purpose": "Arguments on charge",
+  "orders": [
+    {
+      "on": "@-12",
+      "title": "Supply of documents",
+      "uri": "orders/DLSE010006782025/order-1.pdf",
+      "text": "Present: Ld. APP for the State. Accused on bail with Sh. R. Mehta, Ld. counsel. Copies supplied. Put up on {@+2} for arguments on charge."
+    }
+  ],
+  "raw": {
+    "particulars": {
+      "case_type": "criminal",
+      "parties": [
+        {
+          "name": "State",
+          "role": "state"
+        },
+        {
+          "name": "Vikas Yadav",
+          "role": "accused",
+          "advocate": "R. Mehta"
+        }
+      ],
+      "charges": [
+        {
+          "text": "Sec. 318(4) BNS",
+          "offence_date": "@-400"
+        }
+      ]
+    }
+  }
+}

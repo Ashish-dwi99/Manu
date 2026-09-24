@@ -13,8 +13,9 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from manu import judge
-from manu.case_state.models import Case, CaseEvent, Obligation
-from manu.case_state.store import CaseStore
+from manu.case_state.models import Case, CaseEvent, Note, Obligation, SourceRef
+from manu.case_state.store import CaseStore, new_id
+from manu.law import limitation
 
 
 def _obligation(o: Obligation) -> dict:
@@ -25,12 +26,39 @@ def _obligation(o: Obligation) -> dict:
         "due": o.due.isoformat() if o.due else None,
         "status": o.status,
         "source": {
+            "kind": o.source.kind,
+            "connector": o.source.connector,
             "uri": o.source.uri,
             "quote": o.source.quote,
             "page": o.source.page,
             "span": [o.source.span_start, o.source.span_end],
             "verification": o.source.verification,
         },
+    }
+
+
+def _note(n: Note) -> dict:
+    return {
+        "id": n.id,
+        "on": n.on.isoformat(),
+        "text": n.text,
+        "author": n.author,
+        "created_at": n.created_at.isoformat(),
+        "source": {"kind": n.source.kind, "connector": n.source.connector, "verification": n.source.verification},
+    }
+
+
+def _listing(case: Case) -> dict | None:
+    listing = case.listing
+    if listing is None or listing.on != case.next_date:
+        return None
+    return {
+        "on": listing.on.isoformat(),
+        "item": listing.item,
+        "court_hall": listing.court_hall,
+        "bench": listing.bench,
+        "list_type": listing.list_type,
+        "source": {"connector": listing.source.connector, "verification": listing.source.verification},
     }
 
 
@@ -76,6 +104,8 @@ def _summary(case: Case, as_of: date) -> dict:
         "next_date": case.next_date.isoformat() if case.next_date else None,
         "next_purpose": case.next_purpose,
         "last_order": _last_order(case),
+        "listing": _listing(case),
+        "last_note": _note(max(case.notes, key=lambda n: (n.on, n.created_at))) if case.notes else None,
         "open_obligations": len(open_obligations),
         "overdue_obligations": sum(1 for o in open_obligations if o.due and o.due < as_of),
     }
@@ -88,7 +118,7 @@ def _summary(case: Case, as_of: date) -> dict:
 
 def day(store: CaseStore, on: date) -> dict:
     cases = store.listed_on(on)
-    cases.sort(key=lambda c: (c.court, c.case_number, c.id))
+    cases.sort(key=lambda c: (c.court, _item_key(c), c.case_number, c.id))
     since = on - timedelta(days=1)
     entries = []
     for serial, case in enumerate(cases, start=1):
@@ -102,6 +132,13 @@ def day(store: CaseStore, on: date) -> dict:
         ]
         entries.append(entry)
     return {"date": on.isoformat(), "count": len(entries), "entries": entries}
+
+
+def _item_key(case: Case) -> tuple[int, str]:
+    """Cause-list order: by item number where the list gives one, numerically."""
+    item = case.listing.item if case.listing else ""
+    digits = "".join(ch for ch in item if ch.isdigit())
+    return (int(digits) if digits else 10**6, item)
 
 
 def upcoming(store: CaseStore, as_of: date, *, days: int = 7) -> dict:
@@ -158,6 +195,7 @@ def case_detail(store: CaseStore, case_id: str, as_of: date) -> dict | None:
                 }
                 for o in sorted(case.orders, key=lambda o: o.on, reverse=True)
             ],
+            "notes": [_note(n) for n in sorted(case.notes, key=lambda n: (n.on, n.created_at), reverse=True)],
             "timeline": _timeline(case),
             "events": [_event(e) for e in store.events(case.id, limit=50)],
         }
@@ -244,6 +282,8 @@ def _timeline(case: Case) -> list[dict]:
         items.append(
             {"on": order.on.isoformat(), "kind": "order", "label": order.title or "Order", "detail": order.next_purpose}
         )
+    for note in case.notes:
+        items.append({"on": note.on.isoformat(), "kind": "note", "label": "Your note", "detail": note.text[:160]})
     if case.chargesheet_filed_on:
         items.append(
             {
@@ -283,3 +323,156 @@ def set_obligation_status(store: CaseStore, case_id: str, obligation_id: str, st
             store.put(case)
             return _obligation(o)
     return None
+
+
+# -- notes ------------------------------------------------------------------------------
+
+
+def add_note(store: CaseStore, case_id: str, text: str, *, on: date, author: str = "") -> dict | None:
+    """A person's own note on a court day. Sourced to them, never to the court."""
+    case = store.get(case_id)
+    if case is None:
+        return None
+    note = Note(
+        id=new_id("note"),
+        on=on,
+        text=text.strip(),
+        author=author,
+        source=SourceRef(kind="human", connector="human", verification="human_confirmed"),
+    )
+    case.notes.append(note)
+    store.put(case)
+    store.append(
+        [
+            CaseEvent(
+                id=new_id("evt"),
+                case_id=case.id,
+                kind="note_added",
+                summary=f"Note for {on.isoformat()}: {note.text[:120]}",
+                source=note.source,
+            )
+        ]
+    )
+    return _note(note)
+
+
+def delete_note(store: CaseStore, case_id: str, note_id: str) -> bool:
+    case = store.get(case_id)
+    if case is None:
+        return False
+    kept = [n for n in case.notes if n.id != note_id]
+    if len(kept) == len(case.notes):
+        return False
+    case.notes = kept
+    store.put(case)
+    return True
+
+
+# -- limitation -------------------------------------------------------------------------
+
+
+def limitation_view(result: limitation.LimitationResult) -> dict:
+    rule = result.rule
+    return {
+        "rule": {
+            "key": rule.key,
+            "title": rule.title,
+            "provision": rule.provision,
+            "days": rule.days,
+            "reckoned_from": rule.reckoned_from,
+            "reviewed": rule.reviewed,
+        },
+        "start": result.start.isoformat(),
+        "last_day": result.last_day.isoformat(),
+        "file_by": result.file_by.isoformat(),
+        "outer_day": result.outer_day.isoformat() if result.outer_day else None,
+        "excluded_days": result.excluded_days,
+        "days_left": result.days_left,
+        "status": result.status,
+        "working": result.working,
+        "flags": result.flags,
+        "gaps": result.gaps,
+    }
+
+
+def add_deadline(store: CaseStore, case_id: str, result: limitation.LimitationResult) -> dict | None:
+    """Put a computed limitation date in the diary as a to-do, sourced to the working."""
+    case = store.get(case_id)
+    if case is None:
+        return None
+    due = result.outer_day if result.status == "extension_only" else result.file_by
+    obligation = Obligation(
+        id=new_id("obl"),
+        who="You",
+        what=f"{result.rule.title} — last day under {result.rule.provision}",
+        due=due,
+        source=SourceRef(
+            kind="human",
+            connector="limitation",
+            quote="\n".join(result.working),
+            verification="human_confirmed",
+        ),
+    )
+    case.obligations.append(obligation)
+    store.put(case)
+    store.append(
+        [
+            CaseEvent(
+                id=new_id("evt"),
+                case_id=case.id,
+                kind="deadline_added",
+                summary=f"Deadline added: {result.rule.title}, by {due.isoformat()}.",
+                source=obligation.source,
+            )
+        ]
+    )
+    return _obligation(obligation)
+
+
+# -- display boards ---------------------------------------------------------------------
+
+
+def boards(store: CaseStore, ladder, on: date) -> dict:
+    """For each court with your cases listed on `on`: where its board is, and where you are."""
+    courts: dict[str, list[Case]] = {}
+    for case in store.listed_on(on):
+        courts.setdefault(case.court, []).append(case)
+    out = []
+    for court, cases in sorted(courts.items()):
+        cases.sort(key=_item_key)
+        hall = next((c.listing.court_hall for c in cases if c.listing and c.listing.court_hall), "")
+        status, connector, attempts = ladder.board(court, hall)
+        current = _number(status.current_item) if status and status.current_item else None
+        yours = []
+        for c in cases:
+            item = c.listing.item if c.listing and c.listing.on == on else ""
+            number = _number(item)
+            yours.append(
+                {
+                    "case_id": c.id,
+                    "title": c.title or c.cnr,
+                    "item": item,
+                    "ahead": (number - current) if number is not None and current is not None else None,
+                }
+            )
+        out.append(
+            {
+                "court": court,
+                "court_hall": (status.court_hall if status else "") or hall,
+                "state": status.state if status else "unknown",
+                "current_item": status.current_item if status else "",
+                "as_of": status.as_of.isoformat() if status else None,
+                "note": status.note if status else "",
+                "connector": connector,
+                "unavailable": None
+                if status
+                else "; ".join(f"{a.connector}: {a.outcome}" for a in attempts) or "No connector reads this court's board.",
+                "yours": yours,
+            }
+        )
+    return {"on": on.isoformat(), "boards": out}
+
+
+def _number(item: str) -> int | None:
+    digits = "".join(ch for ch in item or "" if ch.isdigit())
+    return int(digits) if digits else None

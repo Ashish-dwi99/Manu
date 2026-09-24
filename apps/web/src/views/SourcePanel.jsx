@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Download, FileText, Search, ShieldAlert, Shi
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "../api.js";
-import { eventLabel, formatDate, locateQuote, splitAround } from "../model.js";
+import { eventLabel, formatDate, humanDates, locateQuote, splitAround } from "../model.js";
 import { CitePill, Loading } from "./common.jsx";
 
 export const PANEL_TABS = [
@@ -72,7 +72,29 @@ function SourceTab({ c, panel, setPanel }) {
       ) : null}
       {cite.kind === "order" ? <OrderSource key={`${cite.on}:${cite.quote}`} caseId={c.id} cite={cite} /> : null}
       {cite.kind === "doc" ? <PageSource key={`${cite.docId}:${cite.page}:${cite.quote}`} cite={cite} /> : null}
+      {cite.kind === "working" ? <WorkingSource cite={cite} /> : null}
     </div>
+  );
+}
+
+/** A deadline Manu worked out: its source is the working itself and the dates a person entered. */
+function WorkingSource({ cite }) {
+  const lines = String(cite.quote || "")
+    .split("\n")
+    .filter(Boolean);
+  return (
+    <>
+      <div className="mn-source-head">
+        <p className="mn-eyebrow">Worked out by fixed rules</p>
+        <h3>{cite.title}</h3>
+        <p className="mn-source-meta">From dates in the record and dates you entered. Not from an order.</p>
+      </div>
+      <ol className="mn-working boxed">
+        {lines.map((line) => (
+          <li key={line}>{humanDates(line)}</li>
+        ))}
+      </ol>
+    </>
   );
 }
 

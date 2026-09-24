@@ -150,8 +150,15 @@ export function groupByCourt(cases) {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([court, items]) => ({
       court,
-      cases: items.sort((a, b) => (a.next_date || "9999").localeCompare(b.next_date || "9999")),
+      cases: items.sort(
+        (a, b) => (a.next_date || "9999").localeCompare(b.next_date || "9999") || itemNumber(a) - itemNumber(b),
+      ),
     }));
+}
+
+function itemNumber(c) {
+  const digits = String(c.listing?.item || "").replace(/\D/g, "");
+  return digits ? Number(digits) : Number.MAX_SAFE_INTEGER;
 }
 
 /** Items with a `due` date grouped by day, in date order. */
@@ -217,4 +224,23 @@ export function firstName(title) {
 /** Reasons from the law engine carry ISO dates; people read "28 Sept 2026". */
 export function humanDates(text) {
   return String(text || "").replace(/\b(\d{4}-\d{2}-\d{2})\b/g, (iso) => formatDate(iso));
+}
+
+/** "Now at item 9", "Not sitting yet", "Risen", or why the board can't be read. */
+export function boardHeadline(board) {
+  if (!board) return "";
+  if (board.state === "in_session") return board.current_item ? `Now at item ${board.current_item}${board.note ? ` · ${board.note}` : ""}` : "In session";
+  if (board.state === "not_started") return board.note || "Not sitting yet";
+  if (board.state === "risen") return board.note || "Court has risen";
+  return "Display board not readable here";
+}
+
+export function timeAgo(iso, now = new Date()) {
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return "";
+  const minutes = Math.max(0, Math.round((now.getTime() - then.getTime()) / 60_000));
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  return `${hours} h ago`;
 }
