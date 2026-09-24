@@ -1,26 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, BookOpenText, Check, CheckCheck, ChevronDown, FilePen, FileText, MessageCircle, PanelRight, Radio, RefreshCw, Search, ShieldAlert, Timer, Trash2, X } from "lucide-react";
+import { ArrowUp, Check, CheckCheck, ChevronDown, FilePen, FileText, MessageCircle, PanelRight, Radio, RefreshCw, Search, ShieldAlert, Timer, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api.js";
-import { boardHeadline, countdown, courtLabel, formatDate, humanDates, plural, s479Headline, timeAgo } from "../model.js";
+import { countdown, courtLabel, formatDate, humanDates, s479Headline, timeAgo } from "../model.js";
 import { CitePill, Labels, Loading } from "./common.jsx";
 import { DraftEditor } from "./DraftEditor.jsx";
 import { DraftSheet } from "./DraftSheet.jsx";
 import { Standing } from "./Research.jsx";
 import { MatchList, SourcePanel } from "./SourcePanel.jsx";
 
-const overlayPanel = () => typeof window !== "undefined" && window.innerWidth < 1180;
-
-function readPanelPref() {
-  // Where the panel would cover the case, it waits to be asked for.
-  if (overlayPanel()) return false;
-  try {
-    return localStorage.getItem("manu.panel") !== "closed";
-  } catch {
-    return true;
-  }
-}
 
 /**
  * One case, read in a minute: when it is next listed and for what, what the court said
@@ -29,18 +18,10 @@ function readPanelPref() {
  */
 export function CaseView({ caseId, today }) {
   const query = useQuery({ queryKey: ["case", caseId, today], queryFn: () => api.case(caseId, today) });
-  const [panelOpen, setPanelOpen] = useState(readPanelPref);
+  // The panel waits to be asked for: a citation opens it, and it closes again.
+  const [panelOpen, setPanelOpen] = useState(false);
   const [panel, setPanel] = useState({ tab: "source", list: [], index: 0 });
   const c = query.data;
-
-  useEffect(() => {
-    if (overlayPanel()) return;
-    try {
-      localStorage.setItem("manu.panel", panelOpen ? "open" : "closed");
-    } catch {
-      /* private window */
-    }
-  }, [panelOpen]);
 
   const openCite = (list, index) => {
     setPanel({ tab: "source", list, index });
@@ -77,17 +58,14 @@ export function CaseView({ caseId, today }) {
             <>
               <header className="mn-case-head">
                 <div className="mn-case-title">
-                  <h1>{c.title}</h1>
+                  <h1>
+                    {c.title} <Labels labels={c.labels} />
+                  </h1>
                   <p className="mono">
-                    {[c.case_number, courtLabel(c.court), `CNR ${c.cnr}`, c.stage.replace("_", " ")].filter(Boolean).join(" · ")}
+                    {[c.case_number, courtLabel(c.court)].filter(Boolean).join(" · ")}
                   </p>
                 </div>
                 <div className="mn-case-tools">
-                  {c.next_date ? (
-                    <span className="mn-next-chip">
-                      <b>{formatDate(c.next_date).slice(0, 6)}</b> {countdown(c.next_date, today).toLowerCase()}
-                    </span>
-                  ) : null}
                   <button
                     type="button"
                     className={`mn-icon ${panelOpen ? "on" : ""}`}
@@ -102,19 +80,19 @@ export function CaseView({ caseId, today }) {
 
               <div className="mn-case-scroll">
                 <div className="mn-case-body">
-                  <Labels labels={c.labels} />
                   <NextHearing c={c} today={today} />
                   <LastOrder c={c} cite={citeProps("order")} onRead={() => openCite(cites, numberOf("order") - 1)} />
                   <Directions c={c} today={today} citeProps={citeProps} />
-                  <Notes c={c} today={today} />
-                  <Authorities c={c} citeProps={citeProps} openResearch={() => {
-                    setPanel({ ...panel, tab: "research" });
-                    setPanelOpen(true);
-                  }} />
-                  <Limitation c={c} today={today} />
-                  <Drafts c={c} today={today} />
                   {c.criminal ? <Liberty criminal={c.criminal} today={today} /> : null}
-                  {c.bail_facts?.applicable ? <BailFacts facts={c.bail_facts} /> : null}
+                  <Workbench
+                    c={c}
+                    today={today}
+                    citeProps={citeProps}
+                    openResearch={() => {
+                      setPanel({ ...panel, tab: "research" });
+                      setPanelOpen(true);
+                    }}
+                  />
                   <Conversation c={c} openCite={openCite} openTab={(tab) => {
                     setPanel({ ...panel, tab });
                     setPanelOpen(true);
@@ -188,66 +166,57 @@ function NextHearing({ c, today }) {
   const board = boards.data?.boards.find((b) => b.court === c.court);
   const mine = board?.yours.find((y) => y.case_id === c.id);
   const [drafting, setDrafting] = useState(false);
+  const where = [
+    c.listing?.item ? `Item ${c.listing.item}` : "",
+    c.listing?.court_hall ? c.listing.court_hall.split(",")[0] : "",
+    board?.state === "in_session" && board.current_item
+      ? `court at ${board.current_item}${mine?.ahead > 0 ? `, ${mine.ahead} ahead` : mine?.ahead === 0 ? ", you're on" : ""}`
+      : "",
+  ].filter(Boolean);
   return (
     <section className="mn-next">
       {c.next_date ? (
-        <button type="button" className="mn-btn small mn-next-action" onClick={() => setDrafting(true)}>
-          <MessageCircle size={14} /> Client update
+        <button type="button" className="mn-icon ghost mn-next-action" aria-label="Draft a client update" title="Draft a client update" onClick={() => setDrafting(true)}>
+          <MessageCircle size={16} />
         </button>
       ) : null}
       {drafting ? <DraftSheet kind="client" caseId={c.id} today={today} onClose={() => setDrafting(false)} /> : null}
-      <p className="mn-eyebrow">Next hearing</p>
-      {c.next_date ? (
-        <p className="mn-next-date">
-          {formatDate(c.next_date)} <span>{countdown(c.next_date, today)}</span>
-        </p>
-      ) : (
-        <p className="mn-next-date">{c.stage === "disposed" ? "Disposed" : "Not listed yet"}</p>
-      )}
-      {c.next_purpose ? <p className="mn-next-purpose">For {c.next_purpose.charAt(0).toLowerCase() + c.next_purpose.slice(1)}</p> : null}
-      {c.listing ? (
-        <p className="mn-next-listing">
-          <b className="mono">Item {c.listing.item || "—"}</b>
-          {[c.listing.court_hall, c.listing.list_type ? `${c.listing.list_type} list` : ""].filter(Boolean).join(" · ")}
-          <small className="mono"> · cause list via {c.listing.source.connector}</small>
-        </p>
-      ) : null}
-      {board ? (
-        <p className={`mn-next-board ${board.state === "in_session" ? "live" : ""}`}>
-          <Radio size={14} className={board.state === "in_session" ? "mn-live" : ""} />
-          {boardHeadline(board)}
-          {mine?.ahead != null ? <b>{mine.ahead > 0 ? ` · ${mine.ahead} ahead of you` : mine.ahead === 0 ? " · your matter is on" : " · your item has been called"}</b> : null}
-          <small className="mono">{board.connector ? ` via ${board.connector} · ${timeAgo(board.as_of)}` : ` ${board.unavailable}`}</small>
+      <p className="mn-next-date">
+        {c.next_date ? formatDate(c.next_date) : c.stage === "disposed" ? "Disposed" : "Not listed yet"}
+        {c.next_date ? <span>{countdown(c.next_date, today)}</span> : null}
+      </p>
+      {c.next_purpose ? <p className="mn-next-purpose">{c.next_purpose}</p> : null}
+      {where.length ? (
+        <p className="mn-next-where" title={board?.connector ? `Board via ${board.connector}, ${timeAgo(board.as_of)}` : undefined}>
+          {board?.state === "in_session" ? <Radio size={13} className="mn-live" /> : null}
+          {where.join(" · ")}
         </p>
       ) : null}
     </section>
   );
 }
 
+/** An order's first lines record who appeared; the preview starts at what the court said. */
+function withoutAppearances(text) {
+  const lines = String(text || "").split("\n");
+  const rest = lines.filter((line) => !/^\s*(present|coram)\s*:/i.test(line));
+  return (rest.length ? rest : lines).join("\n");
+}
+
 function LastOrder({ c, cite, onRead }) {
   const order = c.last_order;
-  if (!order) {
-    return (
-      <section className="mn-part">
-        <h2 className="mn-part-title">Last order</h2>
-        <p className="mn-faint">No order on record yet.</p>
-      </section>
-    );
-  }
+  if (!order) return null;
   return (
     <section className="mn-part">
       <h2 className="mn-part-title">
-        Last order <span>· {formatDate(order.on)}</span>
+        Last order <span>{formatDate(order.on)}</span>
       </h2>
-      <div className="mn-order-card">
-        <p className="mn-order-title">
+      <button type="button" className="mn-order-card" onClick={onRead} title="Read the order">
+        <span className="mn-order-title">
           {order.title || "Order"} <CitePill {...cite} />
-        </p>
-        <p className="mn-order-text">{order.excerpt}</p>
-        <button type="button" className="mn-text-btn" onClick={onRead}>
-          <BookOpenText size={14} /> Read the order
-        </button>
-      </div>
+        </span>
+        <span className="mn-order-text">{withoutAppearances(order.excerpt)}</span>
+      </button>
     </section>
   );
 }
@@ -263,7 +232,7 @@ function Directions({ c, today, citeProps }) {
   return (
     <section className="mn-part">
       <h2 className="mn-part-title">
-        To do <span>· {open.length ? `${open.length} open` : "nothing open"}</span>
+        To do <span>{open.length || "nothing open"}</span>
       </h2>
       {open.length ? (
         <ul className="mn-todo">
@@ -274,15 +243,13 @@ function Directions({ c, today, citeProps }) {
                 <span className="mn-todo-who">{o.who}</span>
                 <span className="mn-todo-what">
                   {o.what} <CitePill {...citeProps(o.id)} />
-                  {o.source.verification === "lead" ? <em className="mn-todo-lead">Read by Manu — confirm</em> : null}
                 </span>
                 <span className={`mn-todo-due ${late ? "red" : o.due === today ? "amber" : ""}`}>
-                  {o.due ? countdown(o.due, today) : "No date"}
-                  {o.due ? <small>{formatDate(o.due)}</small> : null}
+                  <span title={o.due ? formatDate(o.due) : undefined}>{o.due ? countdown(o.due, today) : "—"}</span>
                 </span>
                 <span className="mn-todo-actions">
                   {o.source.verification === "lead" ? (
-                    <button type="button" className="mn-btn small" onClick={() => update.mutate({ id: o.id, status: "confirmed" })} title="The order says this">
+                    <button type="button" className="mn-btn small" onClick={() => update.mutate({ id: o.id, status: "confirmed" })} title="Manu read this from the order. Confirm it says so.">
                       <Check size={14} /> Confirm
                     </button>
                   ) : null}
@@ -322,6 +289,40 @@ function Directions({ c, today, citeProps }) {
   );
 }
 
+/* -- workbench: everything that is not the next hearing, one click away --------------- */
+
+function Workbench({ c, today, citeProps, openResearch }) {
+  const [tab, setTab] = useState(null);
+  const tabs = [
+    ["notes", "Notes", c.notes.length],
+    ["authorities", "Authorities", (c.authorities || []).length],
+    ["deadline", "Deadline"],
+    ["draft", "Draft"],
+    ...(c.bail_facts?.applicable ? [["bail", "Bail facts"]] : []),
+  ];
+  return (
+    <section className="mn-bench">
+      <div className="mn-bench-tabs" role="tablist" aria-label="Case tools">
+        {tabs.map(([id, label, count]) => (
+          <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(tab === id ? null : id)}>
+            {label}
+            {count ? <small>{count}</small> : null}
+          </button>
+        ))}
+      </div>
+      {tab ? (
+        <div className="mn-bench-body">
+          {tab === "notes" ? <Notes c={c} today={today} /> : null}
+          {tab === "authorities" ? <Authorities c={c} citeProps={citeProps} openResearch={openResearch} /> : null}
+          {tab === "deadline" ? <Limitation c={c} today={today} startOpen /> : null}
+          {tab === "draft" ? <Drafts c={c} today={today} /> : null}
+          {tab === "bail" ? <BailFacts facts={c.bail_facts} /> : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 /* -- drafts ------------------------------------------------------------------------------- */
 
 function Drafts({ c, today }) {
@@ -330,7 +331,7 @@ function Drafts({ c, today }) {
   return (
     <section className="mn-part">
       <h2 className="mn-part-title">
-        Draft an application <span>· filled from the record, you answer the rest</span>
+        Draft
       </h2>
       <div className="mn-draft-buttons">
         {(templates.data?.templates || []).map((t) => (
@@ -338,7 +339,6 @@ function Drafts({ c, today }) {
             <FilePen size={16} />
             <span>
               {t.title}
-              <small>{t.key === "bail" ? "Custody, chargesheet, antecedents, s.479 and your authorities, each sourced" : "Listing, last order and your reason, under the right provision"}</small>
             </span>
           </button>
         ))}
@@ -357,11 +357,11 @@ function Authorities({ c, citeProps, openResearch }) {
   return (
     <section className="mn-part">
       <h2 className="mn-part-title">
-        Authorities <span>· paragraphs you rely on, word for word as read</span>
-        <button type="button" className="mn-text-btn mn-part-action" onClick={openResearch}>
-          <Search size={14} /> Research
-        </button>
+        Authorities
       </h2>
+      <button type="button" className="mn-text-btn mn-bench-action" onClick={openResearch}>
+        <Search size={14} /> Find judgments
+      </button>
       {list.length ? (
         <ul className="mn-authorities">
           {list.map((a) => (
@@ -383,7 +383,7 @@ function Authorities({ c, citeProps, openResearch }) {
           ))}
         </ul>
       ) : (
-        <p className="mn-faint small">None yet. Research opens in the panel: read a judgment and rely on the paragraph you need.</p>
+        <p className="mn-faint small">None yet.</p>
       )}
     </section>
   );
@@ -408,7 +408,7 @@ function Notes({ c, today }) {
   return (
     <section className="mn-part">
       <h2 className="mn-part-title">
-        Your notes <span>· what happened in court, in your words</span>
+        Notes
       </h2>
       <form
         className="mn-note-form"
@@ -472,9 +472,9 @@ const LIMITATION_STATUS = {
   expired: "red",
 };
 
-function Limitation({ c, today }) {
+function Limitation({ c, today, startOpen = false }) {
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const rules = useQuery({ queryKey: ["limitation-rules"], queryFn: api.limitationRules, enabled: open, staleTime: Infinity });
   const lastOrder = c.orders[0]?.on || today;
   const [form, setForm] = useState({ rule: "", start: lastOrder, copy_applied: "", copy_ready: "" });
@@ -502,10 +502,7 @@ function Limitation({ c, today }) {
       <section className="mn-part">
         <button type="button" className="mn-limitation-open" onClick={() => setOpen(true)}>
           <Timer size={16} />
-          <span>
-            Work out a deadline
-            <small>Appeal, revision, review, SLP, written statement: the last day under the Limitation Act, with the working</small>
-          </span>
+          <span>Work out a deadline</span>
         </button>
       </section>
     );
@@ -513,7 +510,7 @@ function Limitation({ c, today }) {
   return (
     <section className="mn-part mn-limitation">
       <h2 className="mn-part-title">
-        Limitation <span>· fixed rules, working shown; you choose what you are filing</span>
+        Deadline
         <button type="button" className="mn-icon tiny ghost" aria-label="Close" onClick={() => setOpen(false)}>
           <X size={14} />
         </button>
@@ -621,16 +618,11 @@ function Liberty({ criminal, today }) {
   return (
     <section className="mn-part">
       <h2 className="mn-part-title">
-        Liberty <span>· computed by fixed rules, the court decides</span>
+        Liberty{" "}
+        <span title={criminal.charges.map((ch) => `${ch.raw}${ch.title ? ` — ${ch.title}` : ""}`).join("\n")}>
+          {criminal.charges.map((ch) => ch.raw).join(", ")}
+        </span>
       </h2>
-      <p className="mn-charges">
-        {criminal.charges.map((ch) => (
-          <span key={ch.raw} className={ch.offence ? "" : "gap"} title={ch.offence ? ch.title : "Not matched to the offence table"}>
-            {ch.raw}
-            {ch.title ? <small> {ch.title}</small> : null}
-          </span>
-        ))}
-      </p>
       {gaps.map((ch) => (
         <p key={ch.raw} className="mn-warning">
           <ShieldAlert size={14} /> {ch.raw} is not in the offence table
@@ -641,7 +633,7 @@ function Liberty({ criminal, today }) {
         <div key={a.name} className="mn-accused">
           <p className="mn-accused-name">
             {a.name}
-            <small>{a.in_custody ? `in custody · ${a.s479.days_detained ?? "?"} days` : "not in custody"}</small>
+            <small>{a.in_custody ? `${a.s479.days_detained ?? "?"} days in custody` : "on bail"}</small>
           </p>
           <Reckoner
             title="s.479 BNSS"
@@ -652,7 +644,7 @@ function Liberty({ criminal, today }) {
             working={a.s479.working}
             notes={[...a.s479.gaps, ...a.s479.flags].filter((w) => !w.includes("not yet reviewed"))}
           />
-          {a.default_bail.status !== "not_applicable" ? (
+          {!["not_applicable", "chargesheet_filed"].includes(a.default_bail.status) ? (
             <Reckoner
               title="Default bail"
               status={a.default_bail.status}
@@ -708,10 +700,10 @@ function Reckoner({ title, status, headline, when, percent, working, notes }) {
 function BailFacts({ facts }) {
   const gaps = facts.factors.reduce((n, f) => n + f.items.filter((i) => i.value === "Data unavailable").length + f.gaps.length, 0);
   return (
-    <details className="mn-part mn-bail">
+    <details className="mn-part mn-bail" open>
       <summary>
         <h2 className="mn-part-title">
-          Bail facts <span>· six factors, each with its source{gaps ? ` · ${gaps} gaps` : ""}</span>
+          Bail facts {gaps ? <span>{gaps} gaps</span> : null}
         </h2>
         <ChevronDown size={15} />
       </summary>
@@ -831,7 +823,7 @@ function Conversation({ c, openCite, openTab }) {
               rows={1}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder={`Ask ${c.title} anything — answers cite the page`}
+              placeholder="Ask this case"
               aria-label="Ask about this case"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -843,15 +835,6 @@ function Conversation({ c, openCite, openTab }) {
             <button type="submit" className="mn-send" disabled={!question.trim() || busy} aria-label="Ask">
               <ArrowUp size={17} />
             </button>
-          </div>
-          <div className="mn-composer-foot">
-            <span className="mn-chip-flat">
-              <FileText size={13} /> {plural(docs.data?.documents.length ?? 0, "paper")} · {plural(c.orders.length, "order")}
-            </span>
-            <button type="button" className="mn-chip-flat link" onClick={() => openTab("papers")}>
-              Add papers
-            </button>
-            <span className="mn-composer-hint">Only this case's record</span>
           </div>
         </form>
       </div>

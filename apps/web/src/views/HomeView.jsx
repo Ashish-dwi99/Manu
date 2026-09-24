@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUp, Check, ChevronLeft, ChevronRight, CornerDownLeft, FolderOpen, MessageCircle, Radio, RefreshCw, Search, UserSearch, X } from "lucide-react";
+import { ArrowUp, Check, ChevronLeft, ChevronRight, CornerDownLeft, MessageCircle, Radio, RefreshCw, UserSearch, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "../api.js";
@@ -125,12 +125,6 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
               </span>
             ) : (
               <>
-                <span className="mn-chip-flat">
-                  <FolderOpen size={14} /> {all.length} cases
-                </span>
-                <span className="mn-chip-flat">
-                  <Search size={14} /> title, number or CNR
-                </span>
                 <button type="button" className="mn-chip-flat link" onClick={() => switchMode("advocate")}>
                   <UserSearch size={14} /> Import by advocate name
                 </button>
@@ -206,7 +200,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
               <div className="mn-block">
                 <SectionHead tools={<a className="mn-text-btn" href="#/week">This week →</a>}>Needs you</SectionHead>
                 <ol className="mn-rows">
-                  {needs.map((item) => (
+                  {needs.slice(0, 4).map((item) => (
                     <RowLink
                       key={item.id}
                       href={item.onClick ? undefined : `#/c/${item.case_id}`}
@@ -216,7 +210,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
                       <span className={`mn-when ${item.tone}`}>{item.when}</span>
                       <span className="mn-row-main">
                         <span className="mn-row-title plain">{item.title}</span>
-                        <span className="mn-row-sub">{item.sub}</span>
+                        {item.sub ? <span className="mn-row-sub">{item.sub}</span> : null}
                       </span>
                       <span className="mn-row-aside mono">{item.case_title}</span>
                     </RowLink>
@@ -225,6 +219,11 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
               </div>
             ) : null}
 
+            {needs.length > 4 ? (
+              <a className="mn-quiet-link" href="#/week">
+                {needs.length - 4} more in This week →
+              </a>
+            ) : null}
             {changeCount ? (
               <a className="mn-quiet-link" href="#/changes">
                 {changeCount} {changeCount === 1 ? "change" : "changes"} from the courts since yesterday →
@@ -243,25 +242,24 @@ function BoardStrip({ board }) {
   const live = board.state === "in_session";
   return (
     <div className={`mn-board ${live ? "live" : ""}`}>
-      <span className="mn-board-court">
+      <span
+        className="mn-board-court"
+        title={[board.court_hall, board.connector ? `via ${board.connector}${board.as_of ? `, ${timeAgo(board.as_of)}` : ""}` : board.unavailable].filter(Boolean).join(" · ")}
+      >
         <Radio size={14} className={live ? "mn-live" : ""} />
         {courtLabel(board.court)}
-        {board.court_hall ? <small>{board.court_hall}</small> : null}
+        <span className="mn-board-now">{boardHeadline(board)}</span>
       </span>
-      <span className="mn-board-now">{boardHeadline(board)}</span>
       <span className="mn-board-yours">
         {board.yours
           .filter((y) => y.item)
           .map((y) => (
             <a key={y.case_id} href={`#/c/${y.case_id}`} className={y.ahead != null && y.ahead <= 0 ? "passed" : y.ahead != null && y.ahead <= 3 ? "near" : ""}>
               {y.item}
-              <small>{y.ahead == null ? "" : y.ahead > 0 ? `${y.ahead} ahead` : y.ahead === 0 ? "on now" : "called"}</small>
+              <small>{y.ahead == null ? "" : y.ahead > 0 ? `${y.ahead} ahead` : y.ahead === 0 ? "now" : "called"}</small>
             </a>
           ))}
       </span>
-      <small className="mn-board-src mono">
-        {board.connector ? `via ${board.connector}${board.as_of ? ` · ${timeAgo(board.as_of)}` : ""}` : board.unavailable}
-      </small>
     </div>
   );
 }
@@ -358,7 +356,7 @@ function needsYou(items, cases, today) {
           when: label.code,
           tone: label.tone === "red" ? "red" : "amber",
           title: humanDates(label.reason),
-          sub: courtLabel(c.court),
+          sub: "",
           rank: 0,
         });
       }
@@ -407,17 +405,9 @@ function BoardRow({ entry, day, board }) {
             </span>
           ))}
         </span>
-        {entry.last_note ? (
-          <span className="mn-row-memo" title={`Your note, ${formatDate(entry.last_note.on)}`}>
-            {entry.last_note.text}
-          </span>
-        ) : null}
       </span>
       <span className="mn-row-aside">
         <span className="mono">{entry.case_number || entry.cnr}</span>
-        <small>
-          {entry.custody_days != null ? `${entry.custody_days} days in custody` : entry.listing?.court_hall || courtLabel(entry.court)}
-        </small>
       </span>
     </RowLink>
   );

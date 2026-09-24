@@ -2978,3 +2978,303 @@ p.small {
     padding: 20px;
   }
 }
+
+/* ==========================================================================
+   Calm. The case page shows what the next hearing needs; everything else is
+   one click away. Actions appear where the pointer is, not everywhere at once.
+   ========================================================================== */
+
+.mn-case-body {
+  gap: 34px;
+  max-width: 680px;
+  padding-top: 34px;
+}
+
+.mn-case-title h1 {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.mn-case-title h1 .mn-labels {
+  font-weight: 400;
+}
+
+.mn-part-title span {
+  color: var(--ink-faint);
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+/* next hearing: a date, a purpose, a place */
+.mn-next {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.mn-next-date {
+  font-size: 30px;
+}
+
+.mn-next-date span {
+  font-size: 14px;
+}
+
+.mn-next-purpose {
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.mn-next-where {
+  align-items: center;
+  color: var(--ink-faint);
+  display: flex;
+  font-size: 13px;
+  gap: 6px;
+  margin: 6px 0 0;
+}
+
+.mn-next-action {
+  right: -8px;
+  top: -4px;
+}
+
+/* last order: the card is the link */
+button.mn-order-card {
+  background: none;
+  border: 0;
+  border-left: 2px solid var(--line-strong);
+  border-radius: 0 10px 10px 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  gap: 4px;
+  padding: 4px 10px 4px 16px;
+  text-align: left;
+  width: 100%;
+}
+
+button.mn-order-card:hover {
+  background: var(--hover);
+}
+
+.mn-order-title {
+  font-size: 15px;
+}
+
+button.mn-order-card .mn-order-text {
+  -webkit-line-clamp: 2;
+  font-size: 15px;
+}
+
+/* to do: one line each, actions on hover */
+.mn-todo li {
+  gap: 4px 14px;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  padding: 12px 4px;
+  position: relative;
+}
+
+.mn-todo-who {
+  color: var(--ink-faint);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mn-todo-what {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  font-size: 14.5px;
+  overflow: hidden;
+}
+
+.mn-todo-due {
+  font-size: 13px;
+}
+
+.mn-todo-actions {
+  background: var(--sheet);
+  border-radius: 10px;
+  box-shadow: -18px 0 14px var(--sheet);
+  grid-column: auto;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 8px;
+}
+
+.mn-todo li:hover .mn-todo-actions,
+.mn-todo-actions:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* liberty: the headline per accused; the working folds away */
+.mn-accused-name {
+  font-size: 14.5px;
+}
+
+.mn-reckoner summary {
+  padding: 10px 14px;
+}
+
+/* workbench: quiet tabs, nothing open until asked */
+.mn-bench {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 16px;
+  padding-top: 14px;
+}
+
+.mn-bench-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: -8px;
+}
+
+.mn-bench-tabs button {
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 13.5px;
+  padding: 5px 11px;
+}
+
+.mn-bench-tabs button small {
+  color: var(--ink-faint);
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+.mn-bench-tabs button:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.mn-bench-tabs button[aria-selected="true"] {
+  background: var(--selected);
+  color: var(--ink);
+}
+
+.mn-bench-body .mn-part-title,
+.mn-bench-body .mn-bail > summary {
+  display: none;
+}
+
+.mn-bench-action {
+  justify-self: start;
+  margin-left: -6px;
+}
+
+/* ask: a quiet box; suggestions only while you are in it */
+.mn-case-composer .mn-suggestions {
+  display: none;
+}
+
+.mn-case-composer:focus-within .mn-suggestions {
+  display: flex;
+}
+
+.mn-case-composer .mn-composer {
+  gap: 0;
+  padding: 8px 8px 8px 18px;
+}
+
+.mn-case-composer .mn-composer textarea {
+  font-size: 15px;
+  min-height: 30px;
+  padding: 6px 0;
+}
+
+.mn-case-composer .mn-send {
+  height: 34px;
+  width: 34px;
+}
+
+.mn-case-body {
+  padding-bottom: 150px;
+}
+
+/* research: rely on a paragraph from where you are reading it */
+.mn-paras .mn-btn {
+  opacity: 0;
+}
+
+.mn-paras li:hover .mn-btn,
+.mn-paras li.focus .mn-btn,
+.mn-paras .mn-btn.done,
+.mn-paras .mn-btn:focus-visible {
+  opacity: 1;
+}
+
+.mn-paras p {
+  font-size: 14.5px;
+}
+
+/* notes: newest three, delete on hover */
+.mn-notes li {
+  grid-template-columns: 80px minmax(0, 1fr) auto;
+}
+
+/* today: one line per matter, the board in one line */
+.mn-board {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 8px 12px;
+}
+
+.mn-board-court {
+  font-weight: 500;
+}
+
+.mn-board-now {
+  color: var(--ink-soft);
+  font-weight: 400;
+  margin-left: 10px;
+}
+
+.mn-board-yours a {
+  align-items: baseline;
+  display: inline-flex;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 8px;
+}
+
+.mn-quiet-link + .mn-quiet-link {
+  margin-left: 18px;
+}
+
+@media (max-width: 860px) {
+  .mn-todo li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .mn-todo-who {
+    grid-column: 1 / 3;
+  }
+
+  .mn-reckoner summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .mn-reckoner-title {
+    grid-column: 1 / 3;
+  }
+
+  .mn-reckoner-more {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .mn-meter {
+    grid-column: 1 / 3;
+  }
+}
