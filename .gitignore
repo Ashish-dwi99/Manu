@@ -8,4 +8,5 @@ __pycache__/
 .env
 node_modules/
 apps/web/dist/
+apps/site/dist/
 .DS_Store

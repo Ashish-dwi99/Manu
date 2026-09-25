@@ -12,6 +12,7 @@ uv run ruff check src tests              # lint
 uv run manu serve --demo                 # API + demo court on :8790
 cd apps/web && npm install && npm run dev   # UI on :5180 (proxies /api to :8790)
 cd apps/web && npm test && npm run build
+cd apps/site && npm install && npm run dev  # marketing site on :5190
 ```
 
 ## Rules that keep Manu trustworthy

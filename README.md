@@ -47,6 +47,9 @@ cd apps/web && npm install && npm run dev   # UI on http://127.0.0.1:5180
 
 Or `cd apps/web && npm run build` once, and `manu serve --demo` serves the built UI too.
 
+The public website (home and About, in Tura's design) is `apps/site`:
+`cd apps/site && npm install && npm run dev` serves it on http://127.0.0.1:5190.
+
 The demo court's display board follows the clock (sits 10:30, rises 16:30 IST). To see it
 mid-session at any hour: `MANU_DEMO_BOARD_AT=11:42 uv run manu serve --demo`. Try
 importing by advocate name with "R. Mehta": two of the demo court's cases are not yet
