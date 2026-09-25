@@ -404,7 +404,7 @@ h1, h2, h3, p { margin-top: 0; }
   :root { --content: calc(100% - 32px); }
   .site-header { top: 12px; width: calc(100% - 24px); }
   .site-nav { min-height: 52px; padding: 0 6px 0 13px; }
-  .brand__mark { width: 40px; height: 38px; }
+  .brand__mark { width: 36px; height: 26px; }
   .brand strong { margin-left: 4px; font-size: 20px; }
   .hero { min-height: 100svh; }
   .hero__painting { object-position: 52% center; opacity: .94; }
@@ -437,7 +437,7 @@ h1, h2, h3, p { margin-top: 0; }
   /* Header */
   .site-header { top: 10px; width: calc(100% - 20px); }
   .site-nav { min-height: 48px; gap: 8px; padding: 0 5px 0 10px; }
-  .brand__mark { width: 36px; height: 34px; }
+  .brand__mark { width: 34px; height: 25px; }
   .brand strong { font-size: 18px; transform: translateY(3px); }
   .mobile-menu { padding: 12px; border-radius: 20px; }
   .mobile-menu a { min-height: 48px; padding: 0 8px; font-size: 14px; }
@@ -663,11 +663,10 @@ h5 { font-size: var(--type-h5); }
    What Tura's sheet does not have: Manu's mark in the lockup, the painted
    sections that carry writing, the liberty labels, and the drawn threads. */
 
-/* The mark is a rounded square, not a letter, so it sits beside the word
-   rather than tucked against it. */
-.brand { gap: 9px; }
-.brand__mark { width: 34px; height: 34px; }
-.brand strong { margin-left: 0; transform: translateY(1.5px); }
+/* The mark is wider than Tura's `t`: the dot stands before the M. */
+.brand { gap: 7px; }
+@media (min-width: 721px) { .brand__mark { width: 40px; height: 29px; } }
+.brand strong { margin-left: 0; transform: translateY(2px); }
 
 .hero__content { justify-content: flex-start; padding-top: clamp(128px, 19vh, 190px); }
 /* The painting keeps the court and the people in its lower half, so the
@@ -834,7 +833,7 @@ h5 { font-size: var(--type-h5); }
 
 /* Manu's About additions: its own mark in the glow, the threads behind the
    note, and the lab's short paragraph before the closing card. */
-.about-final__mark .manu-mark { width: 40px; height: 40px; }
+.about-final__mark .manu-mark { width: 44px; height: 32px; color: white; }
 .about-hero__copy .about-kicker { margin-bottom: 24px; }
 .about-note__threads { position: absolute; z-index: 0; inset: 0; }
 .about-note__inner { z-index: 1; }
