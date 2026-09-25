@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 
 import { Brand } from '@/components/atoms/Brand';
-import { APP_URL } from '@/config/site';
+import { APP_CTA, APP_URL } from '@/config/site';
 
 /** The home page's sections, then About; the diary itself is the pill on the end. */
 const SECTIONS = [
@@ -25,7 +25,7 @@ export function SiteHeader() {
         <div className="site-nav__links">
           {SECTIONS.map(([label, href]) => <a href={href} key={href}>{label}</a>)}
           <Link to="/about" aria-current={onAbout ? 'page' : undefined}>About</Link>
-          <a className="site-nav__login" href={APP_URL}>Open Manu</a>
+          <a className="site-nav__login" href={APP_URL}>{APP_CTA}</a>
         </div>
         <button className="site-nav__toggle" type="button" aria-expanded={open} aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen((value) => !value)}>
           {open ? <X size={19} /> : <Menu size={19} />}
@@ -35,7 +35,7 @@ export function SiteHeader() {
         <div className="mobile-menu">
           {SECTIONS.map(([label, href]) => <a href={href} key={href} onClick={() => setOpen(false)}>{label}</a>)}
           <Link to="/about" aria-current={onAbout ? 'page' : undefined} onClick={() => setOpen(false)}>About</Link>
-          <a href={APP_URL}>Open Manu <span>↗</span></a>
+          <a href={APP_URL}>{APP_CTA} <span>↗</span></a>
         </div>
       ) : null}
     </header>

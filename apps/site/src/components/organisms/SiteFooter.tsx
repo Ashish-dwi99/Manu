@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 
-import { APP_URL, COMPANY, CONTACT_EMAIL } from '@/config/site';
+import { APP_CTA, APP_URL, COMPANY, CONTACT_EMAIL } from '@/config/site';
 
 /**
  * Tura's footer: short link columns on a pale blue card, and the wordmark
@@ -17,7 +17,7 @@ export function SiteFooter() {
             <a href="/#product">The diary</a>
             <a href="/#how-it-works">How it works</a>
             <a href="/#screens">Screens</a>
-            <a href={APP_URL}>Open Manu</a>
+            <a href={APP_URL}>{APP_CTA}</a>
           </div>
           <div className="site-footer__nav">
             <p>Trust</p>

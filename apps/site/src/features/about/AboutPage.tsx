@@ -4,7 +4,7 @@ import { ButtonLink } from '@/components/atoms/ButtonLink';
 import { ManuMark } from '@/components/atoms/ManuMark';
 import { SiteFooter } from '@/components/organisms/SiteFooter';
 import { SiteHeader } from '@/components/organisms/SiteHeader';
-import { APP_URL, CONTACT_EMAIL } from '@/config/site';
+import { APP_CTA, APP_URL, CONTACT_EMAIL } from '@/config/site';
 import { LabNote } from '@/features/about/LabNote';
 import { WorkCorridor } from '@/features/about/WorkCorridor';
 
@@ -99,7 +99,7 @@ export function AboutPage() {
           <h2 id="about-final-title">Justice should never wait <em>on a date nobody saw.</em></h2>
           <span className="about-final__mark" aria-hidden="true"><ManuMark /></span>
           <p>Bring a CNR. Tomorrow morning, Manu will have read the court.</p>
-          <ButtonLink href={APP_URL} tone="paper">Open Manu</ButtonLink>
+          <ButtonLink href={APP_URL} tone="paper">{APP_CTA}</ButtonLink>
         </section>
       </main>
 

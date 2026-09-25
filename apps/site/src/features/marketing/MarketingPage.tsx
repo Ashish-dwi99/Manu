@@ -8,7 +8,7 @@ import { PaperGround } from '@/components/molecules/PaperGround';
 import { ProductTour } from '@/components/molecules/ProductTour';
 import { SiteFooter } from '@/components/organisms/SiteFooter';
 import { SiteHeader } from '@/components/organisms/SiteHeader';
-import { APP_URL } from '@/config/site';
+import { APP_CTA, APP_CTA_FIRST, APP_URL } from '@/config/site';
 import { useHashScroll } from '@/hooks/useHashScroll';
 
 /** The six labels on the cause list, in the words the case page uses. */
@@ -111,7 +111,7 @@ export function MarketingPage() {
             </p>
             <div className="hero__actions">
               <ButtonLink href={APP_URL} tone="ink" arrow={false}>
-                Follow a case
+                {APP_CTA_FIRST}
               </ButtonLink>
               <ButtonLink href="/#how-it-works" tone="outline" arrow>
                 See how it works
@@ -361,7 +361,7 @@ export function MarketingPage() {
               <span><CheckCircle2 size={15} aria-hidden="true" /> Every line with its source.</span>
             </p>
             <ButtonLink href={APP_URL} tone="paper">
-              Open Manu
+              {APP_CTA}
             </ButtonLink>
           </div>
         </section>
