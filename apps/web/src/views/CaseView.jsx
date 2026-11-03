@@ -7,6 +7,7 @@ import { countdown, courtLabel, formatDate, humanDates, s479Headline, timeAgo } 
 import { CitePill, Labels, Loading } from "./common.jsx";
 import { DraftEditor } from "./DraftEditor.jsx";
 import { DraftSheet } from "./DraftSheet.jsx";
+import { SignalList } from "./Signals.jsx";
 import { Standing } from "./Research.jsx";
 import { MatchList, SourcePanel } from "./SourcePanel.jsx";
 
@@ -83,6 +84,7 @@ export function CaseView({ caseId, today }) {
                   <NextHearing c={c} today={today} />
                   <LastOrder c={c} cite={citeProps("order")} onRead={() => openCite(cites, numberOf("order") - 1)} />
                   <Directions c={c} today={today} citeProps={citeProps} />
+                  <Progress c={c} today={today} />
                   {c.criminal ? <Liberty criminal={c.criminal} today={today} /> : null}
                   <Workbench
                     c={c}
@@ -242,7 +244,7 @@ function Directions({ c, today, citeProps }) {
               <li key={o.id} className={late ? "late" : ""}>
                 <span className="mn-todo-who">{o.who}</span>
                 <span className="mn-todo-what">
-                  {o.what} <CitePill {...citeProps(o.id)} />
+                  {humanDates(o.what)} <CitePill {...citeProps(o.id)} />
                 </span>
                 <span className={`mn-todo-due ${late ? "red" : o.due === today ? "amber" : ""}`}>
                   <span title={o.due ? formatDate(o.due) : undefined}>{o.due ? countdown(o.due, today) : "—"}</span>
@@ -285,6 +287,19 @@ function Directions({ c, today, citeProps }) {
           </ul>
         </details>
       ) : null}
+    </section>
+  );
+}
+
+/** Stall signals for this one case: what the record shows, with what could move it. */
+function Progress({ c, today }) {
+  if (!c.signals?.length) return null;
+  return (
+    <section className="mn-part">
+      <h2 className="mn-part-title">
+        Is it stuck? <span>what the record shows</span>
+      </h2>
+      <SignalList caseId={c.id} signals={c.signals} today={today} />
     </section>
   );
 }

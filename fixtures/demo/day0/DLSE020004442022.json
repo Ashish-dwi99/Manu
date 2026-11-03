@@ -1,0 +1,43 @@
+{
+  "cnr": "DLSE020004442022",
+  "case_number": "SC/88/2022",
+  "court": "Court of ASJ-02, South District, Saket, New Delhi",
+  "title": "State v. Imran Sheikh",
+  "status": "Pending",
+  "stage": "arguments",
+  "next_date": "@+18",
+  "next_purpose": "Arguments on charge",
+  "hearings": [
+    {"on": "@-120", "purpose": "Arguments on charge", "business": "Arguments heard in part"},
+    {"on": "@-96", "purpose": "Arguments on charge", "business": "Not reached"},
+    {"on": "@-70", "purpose": "Arguments on charge", "business": "Arguments heard in part"},
+    {"on": "@-41", "purpose": "Arguments on charge", "business": "Written synopsis to be filed"},
+    {"on": "@-13", "purpose": "Arguments on charge", "business": "Arguments heard in part"}
+  ],
+  "orders": [
+    {
+      "on": "@-120",
+      "title": "Arguments heard in part",
+      "uri": "orders/DLSE020004442022/order-1.pdf",
+      "text": "Present: Ld. APP for the State. Accused on bail. Sh. V. Rao, Ld. counsel for the accused.\nArguments on charge heard in part. Put up on {@-96} for further arguments on charge."
+    },
+    {
+      "on": "@-41",
+      "title": "Written synopsis to be filed",
+      "uri": "orders/DLSE020004442022/order-2.pdf",
+      "text": "Present: Ld. APP for the State. Accused on bail. Sh. V. Rao, Ld. counsel for the accused.\nArguments on charge continued. Ld. counsel for the accused is directed to file a short written synopsis of arguments within two weeks. Put up on {@-13} for further arguments on charge."
+    }
+  ],
+  "raw": {
+    "particulars": {
+      "case_type": "criminal",
+      "parties": [
+        {"name": "State", "role": "state"},
+        {"name": "Imran Sheikh", "role": "accused", "advocate": "V. Rao"}
+      ],
+      "charges": [{"text": "Sec. 316(2) BNS", "offence_date": "@-640"}],
+      "chargesheet_filed_on": "@-420",
+      "accused": [{"name": "Imran Sheikh", "gender": "male", "first_offender": true, "other_pending_cases": 0, "custody": []}]
+    }
+  }
+}

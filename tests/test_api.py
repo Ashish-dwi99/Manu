@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -147,3 +147,24 @@ def test_a_limitation_deadline_lands_in_the_diary_with_its_working():
     assert "s.12(1)" in saved["source"]["quote"].splitlines()[1]
     assert c.post("/api/law/limitation", json={**request, "rule": "nope"}).status_code == 400
     assert len(c.get("/api/law/limitation").json()["rules"]) >= 10
+
+
+def test_an_accepted_step_can_be_edited_over_the_api_but_a_direction_cannot():
+    c = client()
+    case_id = next(cs["id"] for cs in c.get("/api/cases").json()["cases"] if cs["cnr"] == "DLSE020004442022")
+    live = c.get(f"/api/cases/{case_id}", params={"on": TODAY.isoformat()}).json()["signals"]
+    signal_id = next(s["id"] for s in live if s["kind"] == "repeated_listing")
+    accepted = c.post(f"/api/cases/{case_id}/signals/{signal_id}/action", params={"on": TODAY.isoformat()}).json()
+    obligation_id = accepted["id"]
+    edited = c.post(
+        f"/api/cases/{case_id}/obligations/{obligation_id}/edit",
+        json={"what": "Read the last order and draft the synopsis", "due": (TODAY + timedelta(days=3)).isoformat()},
+    ).json()
+    assert edited["what"] == "Read the last order and draft the synopsis"
+    assert edited["due"] == (TODAY + timedelta(days=3)).isoformat()
+    cleared = c.post(f"/api/cases/{case_id}/obligations/{obligation_id}/edit", json={"due": ""}).json()
+    assert cleared["due"] is None
+    directions = c.get(f"/api/cases/{case_id}").json()["obligations"]
+    direction = next(o for o in directions if o["source"]["kind"] in {"order", "listing"})
+    refused = c.post(f"/api/cases/{case_id}/obligations/{direction['id']}/edit", json={"what": "nicer wording"})
+    assert refused.status_code == 400

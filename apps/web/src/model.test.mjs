@@ -84,3 +84,17 @@ test("the board speaks plainly and never pretends to know", () => {
   assert.equal(boardHeadline({ state: "unknown" }), "Display board not readable here");
   assert.equal(timeAgo("2026-09-24T10:00:00Z", new Date("2026-09-24T10:05:00Z")), "5 min ago");
 });
+
+import { eventLabel, signalKindLabel, signalTone } from "./model.js";
+
+test("stall signals speak plainly and never as a verdict", () => {
+  assert.equal(signalKindLabel("repeated_listing"), "Same business again");
+  assert.equal(signalKindLabel("record_conflict"), "Dates disagree");
+  assert.equal(signalKindLabel("anything"), "Worth a look");
+  assert.equal(signalTone({ tone: "attention" }), "coral");
+  assert.equal(signalTone({ tone: "watch" }), "amber");
+});
+
+test("a confirmed next step shows in the change feed", () => {
+  assert.equal(eventLabel("action_added"), "Next step added");
+});

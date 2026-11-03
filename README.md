@@ -26,7 +26,8 @@ add a CNR and Manu gives you everything the record holds. Nobody switches modes.
 | **Import** | Type an advocate's name in the same box; follow every case found in one go |
 | **This week** | Hearings and directions for the next seven days, by day |
 | **What changed** | New orders, moved dates, directions found, each with its source |
-| **Case** | Next hearing, last order, what somebody has to do, and for criminal matters the s.479 BNSS and default-bail arithmetic with the working and the six bail facts (never a recommendation). Ask the case anything underneath |
+| **Needs attention** | The practice-wide view: every case whose record shows a stall — the same business many dates running, orders missing from the record, a direction past its date, an order and the listing disagreeing on the next date — each with its evidence and a next step you confirm. Accepted steps stay listed until done. Never a verdict on anyone |
+| **Case** | Next hearing, last order, what somebody has to do, an "Is it stuck?" section with the case's own stall signals, and for criminal matters the s.479 BNSS and default-bail arithmetic with the working and the six bail facts (never a recommendation). Ask the case anything underneath |
 | **Notes and deadlines** | Your own notes of each hearing, marked as yours. A limitation calculator (appeal, revision, review, SLP, written statement) with the working, saved to the to-do |
 | **Drafts to send** | Morning cause list message and client updates (7 and 2 days before a hearing), edited, copied or opened in WhatsApp by you. Manu never sends |
 | **Research** | Search judgments, check citations, read by paragraph, rely on a paragraph for the case. Indian Kanoon (`MANU_INDIANKANOON_TOKEN`) is a lead; a firm library (`MANU_JUDGMENTS_DIR`) is licensed; the demo library is fictional |
@@ -52,10 +53,13 @@ mid-session at any hour: `MANU_DEMO_BOARD_AT=11:42 uv run manu serve --demo`. Tr
 importing by advocate name with "R. Mehta": two of the demo court's cases are not yet
 followed.
 
-The demo court has five cases in Saket, New Delhi. It seeds "yesterday" and then runs
+The demo court has seven cases in Saket, New Delhi. It seeds "yesterday" and then runs
 this morning's watch, so the diary opens on real changes: an adjourned bail hearing with a
 fresh order, a civil suit sent to mediation, a Section 479 threshold four days away, a
-default-bail right about to accrue, and a record with a wrongly labelled section.
+default-bail right about to accrue, and a record with a wrongly labelled section. Two more
+cases power Needs attention: a matter listed for arguments on charge five dates running
+with orders missing from the record, and a bail matter whose listed date no longer matches
+its order.
 
 ## Tests
 

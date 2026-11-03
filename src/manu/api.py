@@ -82,6 +82,12 @@ class ObligationStatusRequest(BaseModel):
     status: Literal["confirmed", "open", "done", "dismissed"]
 
 
+class ObligationEditRequest(BaseModel):
+    what: str | None = Field(default=None, max_length=500)
+    due: str | None = None
+    """ISO date, or "" to clear it. Omitted leaves the date alone."""
+
+
 def default_ladder() -> ConnectorLadder:
     connectors: list = [ECourtsOpenApiConnector(), BrowserPortalConnector()]
     folder = os.getenv("MANU_RECORDS_DIR")
@@ -132,6 +138,24 @@ def create_app(
     def diary_changes(limit: int = 100) -> dict:
         return diary.changes(store, limit=max(1, min(limit, 500)))
 
+    @app.get("/api/attention")
+    def attention(on: str | None = None) -> dict:
+        return diary.attention(store, as_of(on))
+
+    @app.post("/api/cases/{case_id}/signals/{signal_id}/dismiss")
+    def dismiss_signal(case_id: str, signal_id: str, on: str | None = None) -> dict:
+        result = diary.dismiss_signal(store, case_id, signal_id, as_of(on))
+        if result is None:
+            raise HTTPException(404, "case not found")
+        return result
+
+    @app.post("/api/cases/{case_id}/signals/{signal_id}/action")
+    def accept_signal_action(case_id: str, signal_id: str, on: str | None = None) -> dict:
+        result = diary.accept_signal_action(store, case_id, signal_id, as_of(on))
+        if result is None:
+            raise HTTPException(404, "no such signal with a next step on this case")
+        return result
+
     @app.get("/api/cases")
     def cases(on: str | None = None) -> dict:
         day = as_of(on)
@@ -158,6 +182,23 @@ def create_app(
         if found is None:
             raise HTTPException(404, "order not found")
         return found
+
+    @app.post("/api/cases/{case_id}/obligations/{obligation_id}/edit")
+    def obligation_edit(case_id: str, obligation_id: str, request: ObligationEditRequest) -> dict:
+        try:
+            result = diary.edit_obligation(
+                store,
+                case_id,
+                obligation_id,
+                what=request.what,
+                due=as_of(request.due) if request.due else None,
+                clear_due=request.due == "",
+            )
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        if result is None:
+            raise HTTPException(404, "obligation not found")
+        return result
 
     @app.post("/api/cases/{case_id}/obligations/{obligation_id}")
     def obligation_status(case_id: str, obligation_id: str, request: ObligationStatusRequest) -> dict:

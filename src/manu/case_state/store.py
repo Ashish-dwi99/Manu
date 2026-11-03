@@ -11,7 +11,7 @@ import hashlib
 import json
 import sqlite3
 import threading
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
@@ -79,6 +79,17 @@ class CaseStore:
                 (case.id, case.cnr, case.model_dump_json(), case.updated_at.isoformat()),
             )
         return case
+
+    def mutate(self, case_id: str, fn: Callable[[Case], object]) -> object:
+        """Read-modify-write one case under the lock, so two simultaneous writers
+        (two tabs accepting the same next step) cannot lose each other's update."""
+        with self._lock:
+            case = self.get(case_id)
+            if case is None:
+                return None
+            result = fn(case)
+            self.put(case)
+            return result
 
     def get(self, case_id: str) -> Case | None:
         row = self._db.execute("select body from cases where id=?", (case_id,)).fetchone()

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
+  Flag,
   CalendarDays,
   ChevronDown,
   ChevronRight,
@@ -20,6 +21,7 @@ import { useEffect, useState } from "react";
 
 import { api } from "./api.js";
 import { countdown, formatDate, groupByCourt, indiaDateKey } from "./model.js";
+import { AttentionView } from "./views/AttentionView.jsx";
 import { CaseView } from "./views/CaseView.jsx";
 import { HomeView } from "./views/HomeView.jsx";
 import { ChangesView, WeekView } from "./views/Lists.jsx";
@@ -46,6 +48,7 @@ function parseRoute(hash) {
   const parts = String(hash || "").replace(/^#\/?/, "").split("/").filter(Boolean);
   if (parts[0] === "c" && parts[1]) return { view: "case", id: parts[1] };
   if (parts[0] === "week") return { view: "week" };
+  if (parts[0] === "attention") return { view: "attention" };
   if (parts[0] === "changes") return { view: "changes" };
   return { view: "today" };
 }
@@ -77,6 +80,7 @@ export function App() {
   const cases = useQuery({ queryKey: ["cases", today], queryFn: () => api.cases(today) });
   const changes = useQuery({ queryKey: ["changes"], queryFn: api.changes });
   const upcoming = useQuery({ queryKey: ["upcoming", today], queryFn: () => api.upcoming(today) });
+  const attention = useQuery({ queryKey: ["attention", today], queryFn: () => api.attention(today) });
   const watch = useMutation({ mutationFn: api.watch, onSuccess: () => queryClient.invalidateQueries() });
 
   const changeCount = (changes.data?.events || []).filter((e) => e.kind !== "tracked").length;
@@ -94,7 +98,7 @@ export function App() {
       return next;
     });
 
-  const shared = { today, cases, changes, upcoming };
+  const shared = { today, cases, changes, upcoming, attention };
 
   return (
     <div className={`mn ${theme === "dark" ? "dark" : ""} ${railOpen ? "" : "rail-closed"} ${phoneRail ? "phone-rail" : ""}`}>
@@ -115,6 +119,7 @@ export function App() {
             <span>Follow a case</span>
           </button>
           <NavLink href="#/" icon={CalendarDays} label="Today" on={route.view === "today"} />
+          <NavLink href="#/attention" icon={Flag} label="Needs attention" count={attention.data?.count} on={route.view === "attention"} />
           <NavLink href="#/week" icon={ListChecks} label="This week" count={dueCount} on={route.view === "week"} />
           <NavLink href="#/changes" icon={Bell} label="What changed" count={changeCount} on={route.view === "changes"} />
         </nav>
@@ -197,6 +202,8 @@ export function App() {
         </div>
         {route.view === "case" ? (
           <CaseView key={route.id} caseId={route.id} {...shared} />
+        ) : route.view === "attention" ? (
+          <AttentionView {...shared} />
         ) : route.view === "changes" ? (
           <ChangesView {...shared} />
         ) : route.view === "week" ? (
