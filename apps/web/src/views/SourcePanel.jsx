@@ -375,7 +375,7 @@ function TimelineTab({ c }) {
             <time className="mono">
               {eventLabel(event.kind)} · {formatDate(event.at)}
             </time>
-            <span>{event.summary}</span>
+            <span>{humanDates(event.summary)}</span>
           </li>
         ))}
       </ol>

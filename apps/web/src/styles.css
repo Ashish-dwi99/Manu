@@ -49,12 +49,12 @@ body {
   --ink-faint: rgba(23, 24, 27, 0.62);
   --line: rgba(23, 24, 27, 0.08);
   --line-strong: rgba(23, 24, 27, 0.15);
-  --accent: #c2673f;
+  --accent: #ab5129;
   --accent-soft: rgba(194, 103, 63, 0.1);
   --accent-line: rgba(194, 103, 63, 0.45);
   --red: #c2412d;
   --red-soft: rgba(194, 65, 45, 0.08);
-  --amber: #a86d12;
+  --amber: #8f5c0a;
   --amber-soft: rgba(206, 146, 38, 0.13);
   --blue: #33638d;
   --blue-soft: rgba(51, 99, 141, 0.09);
@@ -3620,3 +3620,33 @@ button.mn-order-card .mn-order-text {
 .mn ::selection { background: var(--accent-soft); color: var(--ink); }
 .mn button:not(:disabled) { transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .15s cubic-bezier(.22,1,.36,1); }
 .mn button:not(:disabled):active { transform: scale(.98); }
+
+.mn.dark .mn-cite.on { color: #1b1007; }
+
+/* Touch: every control reachable with a thumb, spacing not size doing the work. */
+@media (max-width: 720px), (pointer: coarse) {
+  .mn .mn-btn.small,
+  .mn .mn-icon,
+  .mn .mn-text-btn,
+  .mn .mn-chip-flat,
+  .mn summary,
+  .mn [role="tab"],
+  .mn .mn-rail a,
+  .mn .mn-nav { min-height: 40px; }
+  .mn .mn-icon.tiny, .mn .mn-icon.ghost { min-width: 40px; }
+  .mn .mn-text-btn,
+  .mn .mn-chip-flat { align-items: center; display: inline-flex; padding-inline: 6px; }
+  .mn summary { padding-block: 10px; }
+  .mn .mn-sheet-dialog [role="dialog"] button, .mn .mn-sheet-dialog button { min-height: 40px; }
+}
+.mn-sheet-dialog:focus { outline: none; }
+
+.mn-todo-what { white-space: normal; -webkit-line-clamp: 3; overflow-wrap: anywhere; }
+.mn-composer:focus-within,
+.mn-case-composer:focus-within { box-shadow: 0 0 0 2px var(--accent-line); }
+.mn-cite::after { content: ""; inset: -12px -6px; position: absolute; }
+@media (max-width: 720px), (pointer: coarse) {
+  .mn .mn-quiet-link { align-items: center; display: inline-flex; min-height: 40px; }
+  .mn .mn-icon.small, .mn .mn-send { min-height: 40px; min-width: 40px; }
+  .mn a[href^="#/c/"]:not([class]) { align-items: center; display: inline-flex; min-height: 40px; min-width: 40px; justify-content: center; }
+}

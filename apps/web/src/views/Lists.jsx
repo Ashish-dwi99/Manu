@@ -1,4 +1,4 @@
-import { countdown, eventLabel, eventTone, formatDate, formatLongDate, groupByDay, groupEventsByCase } from "../model.js";
+import { humanDates, countdown, eventLabel, eventTone, formatDate, formatLongDate, groupByDay, groupEventsByCase } from "../model.js";
 import { Loading, RowLink, SectionHead } from "./common.jsx";
 
 export function ChangesView({ changes }) {
@@ -14,10 +14,10 @@ export function ChangesView({ changes }) {
               <SectionHead tools={<a className="mn-text-btn" href={`#/c/${group.caseId}`}>Open case →</a>}>{group.title}</SectionHead>
               <ol className="mn-rows">
                 {group.events.map((event) => (
-                  <RowLink key={event.id} href={`#/c/${group.caseId}`} label={`${eventLabel(event.kind)}: ${event.summary}`}>
+                  <RowLink key={event.id} href={`#/c/${group.caseId}`} label={`${eventLabel(event.kind)}: ${humanDates(event.summary)}`}>
                     <span className={`mn-kind tone-${eventTone(event.kind)}`}>{eventLabel(event.kind)}</span>
                     <span className="mn-row-main">
-                      <span className="mn-row-title plain">{event.summary}</span>
+                      <span className="mn-row-title plain">{humanDates(event.summary).replace(`${eventLabel(event.kind)}: `, "")}</span>
                     </span>
                     <span className="mn-row-aside">
                       <small>{formatDate(event.at)}</small>
