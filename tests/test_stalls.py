@@ -209,11 +209,23 @@ def test_accepted_step_stays_on_the_practice_view_until_done():
     # The accepted signal no longer asks for triage, and the step is listed instead.
     assert body["count"] == 0
     assert body["in_progress"][0]["next_steps"][0]["id"] == obligation["id"]
-    # Done: it leaves the practice view, and the quieted signal stays quiet.
+    # Done: it leaves the practice view's triage and in-progress lists…
     diary.set_obligation_status(store, c.id, obligation["id"], "done")
     assert diary.attention(store, TODAY)["in_progress"] == []
-    assert signal_id not in {s["id"] for s in diary.case_signals(store.get(c.id), TODAY)}
+    assert diary.attention(store, TODAY)["count"] == 0
+    # …but the signal is not treated as resolved: it stays visible as done-not-resolved.
+    done_signal = next(s for s in diary.case_signals(store.get(c.id), TODAY) if s["id"] == signal_id)
+    assert done_signal["step_done"]["obligation_id"] == obligation["id"]
+    assert done_signal["step_done"]["at"] is not None
     assert store.get(c.id).obligations[0].closed_at is not None
+    # "Not done after all" reopens the step and the accepted state returns.
+    diary.set_obligation_status(store, c.id, obligation["id"], "open")
+    reopened = next(s for s in diary.case_signals(store.get(c.id), TODAY) if s["id"] == signal_id)
+    assert reopened["accepted"] and not reopened.get("step_done")
+    # "Reviewed — stop watching" is the explicit reviewed outcome: the signal tucks away.
+    diary.set_obligation_status(store, c.id, obligation["id"], "done")
+    diary.dismiss_signal(store, c.id, signal_id, TODAY)
+    assert signal_id not in {s["id"] for s in diary.case_signals(store.get(c.id), TODAY)}
     # Dismissed instead: the signal returns to triage — the stall was never acted on.
     store2 = CaseStore()
     store2.put(
@@ -249,7 +261,8 @@ def test_accepted_step_survives_a_restart():
         assert stored.obligations[0].status == "done"
         assert stored.obligations[0].closed_at is not None
         assert stored.signal_actions[signal_id] == accepted["id"]
-        assert signal_id not in {s["id"] for s in diary.case_signals(stored, TODAY)}
+        done_signal = next(s for s in diary.case_signals(stored, TODAY) if s["id"] == signal_id)
+        assert done_signal["step_done"]
 
 
 def test_another_orderless_hearing_revives_a_tucked_gap_signal():
@@ -302,3 +315,47 @@ def test_accepting_a_signal_without_a_next_step_returns_none():
     live = diary.case_signals(store.get(c.id), TODAY)
     signal = next(s for s in live if s["kind"] == "directions_waiting")
     assert diary.accept_signal_action(store, c.id, signal["id"], TODAY) is None
+
+
+def test_simultaneous_accepts_create_one_todo(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    store = CaseStore(tmp_path / "manu.sqlite3")
+    c = case(hearings=[hearing(90), hearing(60), hearing(30)], next_date=TODAY + timedelta(days=10))
+    store.put(c)
+    live = diary.case_signals(store.get(c.id), TODAY)
+    signal_id = next(s for s in live if s["kind"] == "repeated_listing")["id"]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(lambda _: diary.accept_signal_action(store, c.id, signal_id, TODAY), range(8)))
+    ids = {r["id"] for r in results}
+    assert len(ids) == 1
+    stored = store.get(c.id)
+    assert len(stored.obligations) == 1
+    assert len([e for e in store.events(c.id) if e.kind == "action_added"]) == 1
+    # And an unrelated update made between the two accepts is not lost.
+    note = diary.add_note(store, c.id, "Called the reader about the date.", on=TODAY, author="me")
+    assert note and store.get(c.id).notes
+
+
+def test_an_accepted_step_can_be_corrected_but_a_courts_direction_cannot():
+    store = CaseStore()
+    c = case(hearings=[hearing(90), hearing(60), hearing(30)], next_date=TODAY + timedelta(days=10))
+    store.put(c)
+    live = diary.case_signals(store.get(c.id), TODAY)
+    signal_id = next(s for s in live if s["kind"] == "repeated_listing")["id"]
+    accepted = diary.accept_signal_action(store, c.id, signal_id, TODAY)
+    edited = diary.edit_obligation(
+        store, c.id, accepted["id"], what="Read the 23 Sept order and draft the synopsis", due=TODAY + timedelta(days=5)
+    )
+    assert edited["what"] == "Read the 23 Sept order and draft the synopsis"
+    assert edited["due"] == (TODAY + timedelta(days=5)).isoformat()
+    cleared = diary.edit_obligation(store, c.id, accepted["id"], clear_due=True)
+    assert cleared["due"] is None
+    direction = Obligation(id="obl_c", who="IO", what="File reply", due=TODAY - timedelta(days=2), source=source("order"))
+    c2 = case(id="case_dir", obligations=[direction])
+    store.put(c2)
+    try:
+        diary.edit_obligation(store, c2.id, "obl_c", what="softer wording")
+        raise AssertionError("a court direction must not be editable")
+    except ValueError:
+        pass

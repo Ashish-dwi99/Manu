@@ -362,34 +362,27 @@ def set_obligation_status(store: CaseStore, case_id: str, obligation_id: str, st
 # -- stall signals: what the record says about a case that is not moving ----------------
 
 
-def _accepted_map(case: Case) -> dict[str, Obligation]:
-    """Signal id -> the open to-do the advocate accepted for it."""
-    return {
-        sid: o
-        for sid, oid in case.signal_actions.items()
-        for o in case.obligations
-        if o.id == oid and o.status == "open"
-    }
-
-
 def case_signals(case: Case, as_of: date) -> list[dict]:
     """The case's live stall signals. Tucked-away ones return when their evidence
-    changes; one whose next step was accepted carries that state, and one whose
-    to-do was finished stays quiet until the record moves again."""
-    accepted = _accepted_map(case)
-    handled = {
-        sid
-        for sid, oid in case.signal_actions.items()
-        for o in case.obligations
-        if o.id == oid and o.status == "done"
+    changes. One whose next step is open carries that state; one whose step was
+    finished stays visible as *done, not resolved* — the record has not moved —
+    until a person says the stall itself is over or new evidence arrives."""
+    actions = {
+        sid: o for sid, oid in case.signal_actions.items() for o in case.obligations if o.id == oid
     }
     out = []
     for signal in stalls.signals(case, as_of):
-        if signal.dismissed or signal.id in handled:
+        if signal.dismissed:
             continue
         body = signal.as_dict()
-        if signal.id in accepted:
-            body["accepted"] = _obligation(accepted[signal.id])
+        linked = actions.get(signal.id)
+        if linked is not None and linked.status == "open":
+            body["accepted"] = _obligation(linked)
+        elif linked is not None and linked.status == "done":
+            body["step_done"] = {
+                "obligation_id": linked.id,
+                "at": linked.closed_at.isoformat() if linked.closed_at else None,
+            }
         out.append(body)
     return out
 
@@ -412,7 +405,7 @@ def attention(store: CaseStore, as_of: date) -> dict:
     in_progress = []
     for case in store.all():
         live = case_signals(case, as_of)
-        fresh = [s for s in live if not s.get("accepted")]
+        fresh = [s for s in live if not s.get("accepted") and not s.get("step_done")]
         if fresh:
             entry = _summary(case, as_of)
             entry["signals"] = fresh
@@ -459,47 +452,77 @@ def accept_signal_action(store: CaseStore, case_id: str, signal_id: str, as_of: 
     evidence and stamped, so a later pilot can see when work was proposed, accepted
     and finished. Accepting quiets the signal; it does not resolve the stall — the
     to-do stays on the practice view until it is done."""
+    def apply(case: Case) -> dict | None:
+        if signal_id in case.signal_actions:
+            existing = next((o for o in case.obligations if o.id == case.signal_actions[signal_id]), None)
+            if existing is not None:
+                return _obligation(existing)
+        signal = next((s for s in stalls.signals(case, as_of) if s.id == signal_id), None)
+        if signal is None or not signal.action:
+            return None
+        quote = "\n".join(
+            [signal.title, *[e.label + (f" — {e.quote}" if e.quote else "") for e in signal.evidence]]
+        )[:1000]
+        obligation = Obligation(
+            id=new_id("obl"),
+            who="You",
+            what=signal.action,
+            due=case.next_date,
+            created_at=utc_now(),
+            source=SourceRef(
+                kind="court_record",
+                connector="manu",
+                quote=quote,
+                verification="human_confirmed",
+            ),
+        )
+        case.obligations.append(obligation)
+        case.signal_actions[signal.id] = obligation.id
+        store.append(
+            [
+                CaseEvent(
+                    id=new_id("evt"),
+                    case_id=case.id,
+                    kind="action_added",
+                    summary=f"Next step added: {signal.action}",
+                    source=obligation.source,
+                )
+            ]
+        )
+        return _obligation(obligation)
+
+    return store.mutate(case_id, apply)  # type: ignore[return-value]
+
+
+def edit_obligation(
+    store: CaseStore,
+    case_id: str,
+    obligation_id: str,
+    *,
+    what: str | None = None,
+    due: date | None = None,
+    clear_due: bool = False,
+) -> dict | None:
+    """Correct a next step the advocate accepted: its wording or its date.
+
+    Only Manu-proposed steps are editable. A direction from an order stays exactly
+    as the order wrote it — its words are the source, not a draft."""
     case = store.get(case_id)
     if case is None:
         return None
-    if signal_id in case.signal_actions:
-        existing = next((o for o in case.obligations if o.id == case.signal_actions[signal_id]), None)
-        if existing is not None:
-            return _obligation(existing)
-    signal = next((s for s in stalls.signals(case, as_of) if s.id == signal_id), None)
-    if signal is None or not signal.action:
-        return None
-    quote = "\n".join(
-        [signal.title, *[e.label + (f" — {e.quote}" if e.quote else "") for e in signal.evidence]]
-    )[:1000]
-    obligation = Obligation(
-        id=new_id("obl"),
-        who="You",
-        what=signal.action,
-        due=case.next_date,
-        created_at=utc_now(),
-        source=SourceRef(
-            kind="court_record",
-            connector="manu",
-            quote=quote,
-            verification="human_confirmed",
-        ),
-    )
-    case.obligations.append(obligation)
-    case.signal_actions[signal.id] = obligation.id
-    store.put(case)
-    store.append(
-        [
-            CaseEvent(
-                id=new_id("evt"),
-                case_id=case.id,
-                kind="action_added",
-                summary=f"Next step added: {signal.action}",
-                source=obligation.source,
-            )
-        ]
-    )
-    return _obligation(obligation)
+    for o in case.obligations:
+        if o.id == obligation_id:
+            if o.source.connector != "manu":
+                raise ValueError("A direction from an order cannot be edited; its words are the court's.")
+            if what is not None and what.strip():
+                o.what = what.strip()
+            if clear_due:
+                o.due = None
+            elif due is not None:
+                o.due = due
+            store.put(case)
+            return _obligation(o)
+    return None
 
 
 # -- notes ------------------------------------------------------------------------------

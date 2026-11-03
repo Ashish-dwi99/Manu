@@ -3458,3 +3458,37 @@ button.mn-order-card .mn-order-text {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 }
+
+.mn-signal.step-done {
+  border-style: dashed;
+  opacity: 0.88;
+}
+
+.mn-step-actions {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.mn-step-edit {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  grid-column: 1 / 4;
+}
+
+.mn-step-edit input[type="text"],
+.mn-step-edit input:not([type]) {
+  flex: 1 1 320px;
+}
+
+.mn-step-edit input {
+  background: var(--sheet);
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  padding: 7px 10px;
+}

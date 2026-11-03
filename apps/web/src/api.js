@@ -32,6 +32,7 @@ export const api = {
   order: (caseId, on) => request(`/api/cases/${caseId}/orders/${on}`),
   track: (cnr) => request(`/api/cases`, json("POST", { cnr })),
   setObligation: (caseId, id, status) => request(`/api/cases/${caseId}/obligations/${id}`, json("POST", { status })),
+  editObligation: (caseId, id, body) => request(`/api/cases/${caseId}/obligations/${id}/edit`, json("POST", body)),
   watch: () => request(`/api/watch/run`, json("POST")),
   runtime: () => request(`/api/runtime`),
   documents: (caseId) => request(`/api/cases/${caseId}/documents`),

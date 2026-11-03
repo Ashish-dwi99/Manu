@@ -82,6 +82,12 @@ class ObligationStatusRequest(BaseModel):
     status: Literal["confirmed", "open", "done", "dismissed"]
 
 
+class ObligationEditRequest(BaseModel):
+    what: str | None = Field(default=None, max_length=500)
+    due: str | None = None
+    """ISO date, or "" to clear it. Omitted leaves the date alone."""
+
+
 def default_ladder() -> ConnectorLadder:
     connectors: list = [ECourtsOpenApiConnector(), BrowserPortalConnector()]
     folder = os.getenv("MANU_RECORDS_DIR")
@@ -176,6 +182,23 @@ def create_app(
         if found is None:
             raise HTTPException(404, "order not found")
         return found
+
+    @app.post("/api/cases/{case_id}/obligations/{obligation_id}/edit")
+    def obligation_edit(case_id: str, obligation_id: str, request: ObligationEditRequest) -> dict:
+        try:
+            result = diary.edit_obligation(
+                store,
+                case_id,
+                obligation_id,
+                what=request.what,
+                due=as_of(request.due) if request.due else None,
+                clear_due=request.due == "",
+            )
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        if result is None:
+            raise HTTPException(404, "obligation not found")
+        return result
 
     @app.post("/api/cases/{case_id}/obligations/{obligation_id}")
     def obligation_status(case_id: str, obligation_id: str, request: ObligationStatusRequest) -> dict:
