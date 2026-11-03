@@ -98,3 +98,17 @@ test("stall signals speak plainly and never as a verdict", () => {
 test("a confirmed next step shows in the change feed", () => {
   assert.equal(eventLabel("action_added"), "Next step added");
 });
+
+import { signalContext, signalActionLabel } from "./model.js";
+test("collapsed signals preserve missing versus incomplete distinctions", () => {
+  assert.match(signalContext("orders_missing"), /not proof of no order/);
+  assert.match(signalContext("directions_waiting"), /completion unconfirmed/);
+  assert.match(signalContext("repeated_listing"), /cause not known/);
+  assert.match(signalContext("record_conflict"), /verify before relying/);
+});
+test("scan labels do not change the actual proposed step", () => {
+  const s = { kind: "orders_missing", action: "Upload orders or verify from court file" };
+  assert.equal(signalActionLabel(s), "Find or upload missing orders");
+  assert.equal(s.action, "Upload orders or verify from court file");
+  assert.equal(signalActionLabel({ kind: "unknown", action: "Review record" }), "Review record");
+});

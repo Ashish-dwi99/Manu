@@ -53,7 +53,7 @@ function SourceTab({ c, panel, setPanel }) {
     return (
       <div className="mn-panel-empty">
         <FileText size={22} />
-        <p>Click a numbered source anywhere on the case to read the words it came from.</p>
+        <p>Select a source number to read it.</p>
       </div>
     );
   }
@@ -91,9 +91,9 @@ function WorkingSource({ cite }) {
   return (
     <>
       <div className="mn-source-head">
-        <p className="mn-eyebrow">Worked out by fixed rules</p>
+        <p className="mn-eyebrow">Calculated deadline</p>
         <h3>{cite.title}</h3>
-        <p className="mn-source-meta">From dates in the record and dates you entered. Not from an order.</p>
+        <p className="mn-source-meta">Record + entered dates · not an order</p>
       </div>
       <ol className="mn-working boxed">
         {lines.map((line) => (
@@ -113,20 +113,20 @@ function Verdict({ found, cite }) {
   if (!found) {
     return (
       <p className="mn-verdict bad">
-        <ShieldAlert size={14} /> These words were not found in the text. Do not rely on them.
+        <ShieldAlert size={14} /> Quote not found. Do not rely on it.
       </p>
     );
   }
   if (cite.verification === "lead") {
     return (
       <p className="mn-verdict lead">
-        <ShieldCheck size={14} /> Words found in the order. Read by Manu — confirm the direction.
+        <ShieldCheck size={14} /> Quote found · confirm direction
       </p>
     );
   }
   return (
     <p className="mn-verdict ok">
-      <ShieldCheck size={14} /> Words found in the source{cite.verification === "human_confirmed" ? " · confirmed by you" : ""}.
+      <ShieldCheck size={14} /> Quote found{cite.verification === "human_confirmed" ? " · confirmed by you" : ""}.
     </p>
   );
 }
@@ -217,7 +217,7 @@ function PageSource({ cite }) {
           {data.text ? (
             <Highlighted text={data.text} range={range} terms={range ? null : cite.terms} />
           ) : (
-            <p className="mn-faint">This page has no text layer. It needs OCR.</p>
+            <p className="mn-faint">No text layer · OCR needed</p>
           )}
         </>
       ) : null}
@@ -278,11 +278,13 @@ function PapersTab({ caseId, openCite }) {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find in papers and orders" aria-label="Find in papers and orders" />
       </form>
       {search.data ? (
-        <MatchList matches={search.data.matches} openCite={openCite} empty={`Nothing in the papers says “${search.data.query}”.`} />
+        <MatchList matches={search.data.matches} openCite={openCite} empty={`No text matches for "${search.data.query}".`} />
       ) : null}
       {search.error ? <p className="mn-error">{String(search.error.message)}</p> : null}
 
       <p className="mn-eyebrow">Papers · {list.length}</p>
+      {!docs.isPending && !list.length ? <p className="mn-empty">No papers added.</p> : null}
+      {docs.error ? <p className="mn-error">{String(docs.error.message)}</p> : null}
       <ul className="mn-docs">
         {list.map((d) => (
           <li key={d.id}>
@@ -304,7 +306,7 @@ function PapersTab({ caseId, openCite }) {
         ))}
       </ul>
       <button type="button" className="mn-drop" onClick={() => input.current?.click()} disabled={upload.isPending}>
-        <Upload size={15} /> {upload.isPending ? "Reading…" : "Add PDF, Word or text"}
+        <Upload size={15} /> {upload.isPending ? "Reading…" : "Add papers"}
       </button>
       <input
         ref={input}
@@ -318,7 +320,7 @@ function PapersTab({ caseId, openCite }) {
         }}
       />
       {upload.error ? <p className="mn-error">{String(upload.error.message)}</p> : null}
-      <p className="mn-faint small">Orders Manu reads from the court are searched too.</p>
+      <p className="mn-faint small">PDF, Word or text · orders included in search</p>
     </div>
   );
 }
@@ -330,7 +332,7 @@ function DatesTab({ caseId }) {
   return (
     <div className="mn-papers">
       <div className="mn-panel-row">
-        <p className="mn-eyebrow">List of dates · each row sourced</p>
+        <p className="mn-eyebrow">List of dates</p>
         <a className="mn-btn small" href={api.datesDocxUrl(caseId)}>
           <Download size={14} /> .docx
         </a>
@@ -348,7 +350,7 @@ function DatesTab({ caseId }) {
           ))}
         </ol>
       </Loading>
-      <p className="mn-faint small">Advocate review required before filing.</p>
+      <p className="mn-faint small">Review before filing.</p>
     </div>
   );
 }
@@ -366,7 +368,7 @@ function TimelineTab({ c }) {
           </li>
         ))}
       </ol>
-      <p className="mn-eyebrow">What Manu saw</p>
+      <p className="mn-eyebrow">Record updates</p>
       <ol className="mn-timeline log">
         {c.events.map((event) => (
           <li key={event.id}>

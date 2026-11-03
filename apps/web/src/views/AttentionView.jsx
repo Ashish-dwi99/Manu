@@ -1,4 +1,4 @@
-import { humanDates } from "../model.js";
+import { courtLabel, humanDates } from "../model.js";
 import { Labels, Loading, SectionHead } from "./common.jsx";
 import { NextStepRow, SignalList } from "./Signals.jsx";
 
@@ -14,13 +14,24 @@ export function AttentionView({ attention, today }) {
   const nothing = attention.data && !entries.length && !inProgress.length;
   return (
     <section className="mn-sheet">
-      <div className="mn-home narrow">
-        <p className="mn-eyebrow">Case progression</p>
+      <div className="mn-home narrow mn-attention">
+        <p className="mn-eyebrow">{entries.length} cases to review · {inProgress.reduce((n, e) => n + e.next_steps.length, 0)} {inProgress.reduce((n, e) => n + e.next_steps.length, 0) === 1 ? "open step" : "open steps"}</p>
         <h1 className="mn-display">Needs attention</h1>
         <Loading
           query={attention}
-          empty={nothing ? "No stall signals in any case you follow. The diary will say so here when the record shows one." : null}
+          empty={nothing ? "No signals or open next steps." : null}
         >
+          {inProgress.length ? (
+            <div className="mn-block">
+              <SectionHead>Your next steps</SectionHead>
+              <ul className="mn-steps">
+                {inProgress.map((entry) =>
+                  entry.next_steps.map((step) => <NextStepRow key={step.id} step={step} today={today} />),
+                )}
+              </ul>
+            </div>
+          ) : null}
+
           {entries.map((entry) => (
             <div key={entry.id} className="mn-block">
               <SectionHead
@@ -37,22 +48,12 @@ export function AttentionView({ attention, today }) {
                   ? `Next ${humanDates(entry.next_date)}${entry.next_purpose ? ` · ${entry.next_purpose}` : ""}`
                   : "No date listed"}
                 {" · "}
-                {entry.court}
+                {courtLabel(entry.court)}
               </p>
               <SignalList caseId={entry.id} signals={entry.signals} today={today} />
             </div>
           ))}
 
-          {inProgress.length ? (
-            <div className="mn-block">
-              <SectionHead>In progress · next steps you accepted</SectionHead>
-              <ul className="mn-steps">
-                {inProgress.map((entry) =>
-                  entry.next_steps.map((step) => <NextStepRow key={step.id} step={step} today={today} />),
-                )}
-              </ul>
-            </div>
-          ) : null}
         </Loading>
       </div>
     </section>

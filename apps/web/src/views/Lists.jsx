@@ -6,9 +6,9 @@ export function ChangesView({ changes }) {
   return (
     <section className="mn-sheet">
       <div className="mn-home narrow">
-        <p className="mn-eyebrow">From the courts, newest first</p>
+        <p className="mn-eyebrow">Latest updates</p>
         <h1 className="mn-display">What changed</h1>
-        <Loading query={changes} empty={changes.data && !groups.length ? "Nothing has changed since you started following these cases." : null}>
+        <Loading query={changes} empty={changes.data && !groups.length ? "No changes recorded yet." : null}>
           {groups.map((group) => (
             <div key={group.caseId} className="mn-block">
               <SectionHead tools={<a className="mn-text-btn" href={`#/c/${group.caseId}`}>Open case →</a>}>{group.title}</SectionHead>
@@ -39,7 +39,7 @@ export function WeekView({ upcoming, today }) {
   return (
     <section className="mn-sheet">
       <div className="mn-home narrow">
-        <p className="mn-eyebrow">Hearings and directions, next seven days</p>
+        <p className="mn-eyebrow">Next 7 days · includes overdue work</p>
         <h1 className="mn-display">This week</h1>
         <Loading query={upcoming} empty={upcoming.data && !days.length ? "Nothing listed or due this week." : null}>
           {days.map(({ day, entries }) => (

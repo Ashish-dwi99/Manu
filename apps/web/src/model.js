@@ -264,3 +264,26 @@ export function timeAgo(iso, now = new Date()) {
   const hours = Math.round(minutes / 60);
   return `${hours} h ago`;
 }
+
+/** The short qualification stays beside the signal, even with evidence folded. */
+export function signalContext(kind) {
+  return {
+    repeated_listing: "Listing pattern · cause not known",
+    directions_waiting: "Open in diary · completion unconfirmed",
+    record_conflict: "Conflicting dates · verify before relying",
+    orders_missing: "Missing here · not proof of no order",
+    quiet_record: "Record gap · not proof of no progress",
+    awaiting_date: "No date recorded · check listing",
+  }[kind] || "From the record · review required";
+}
+
+/** A scan label, not a rewrite of the proposed task saved on acceptance. */
+export function signalActionLabel(signal) {
+  return {
+    repeated_listing: "Prepare for the next hearing",
+    record_conflict: "Verify the next hearing date",
+    orders_missing: "Find or upload missing orders",
+    quiet_record: "Check the latest case record",
+    awaiting_date: "Check the next listing",
+  }[signal.kind] || signal.action;
+}

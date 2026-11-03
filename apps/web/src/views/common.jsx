@@ -32,7 +32,7 @@ export function Labels({ labels, only }) {
 
 export function Loading({ query, empty, children }) {
   if (query.isPending) return <p className="mn-faint mn-pad">Loading…</p>;
-  if (query.error) return <p className="mn-error">Could not load: {String(query.error.message)}. Is the Manu API running?</p>;
+  if (query.error) return <div className="mn-load-error" role="alert"><p>Couldn't load this view.</p><button type="button" className="mn-btn small" onClick={() => query.refetch()}>Try again</button><details><summary>Error details</summary><p className="mn-error">{String(query.error.message)}</p></details></div>;
   if (empty) return <p className="mn-empty">{empty}</p>;
   return children;
 }

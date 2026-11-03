@@ -46,20 +46,21 @@ export function DraftEditor({ c, template, today, onClose }) {
       <section className="mn-sheet-dialog wide" role="dialog" aria-label="Draft application" onMouseDown={(e) => e.stopPropagation()}>
         <header>
           <div>
-            <p className="mn-eyebrow">Draft from the record · you file it</p>
+            <p className="mn-eyebrow">Application draft · not filed</p>
             <h2>{d?.title || "Drafting…"}</h2>
           </div>
           <button type="button" className="mn-icon ghost" aria-label="Close" onClick={onClose}>
             <X size={17} />
           </button>
         </header>
+        {query.error ? <p className="mn-error" role="alert">Couldn't load draft: {String(query.error.message)}</p> : null}
         <div className="mn-drafting">
           <form className="mn-questions" onSubmit={(e) => e.preventDefault()}>
-            <p className="mn-faint small">Manu filled what the record says. These are for you.</p>
+            <p className="mn-faint small">Your details · * required</p>
             {(d?.questions || []).map((q) => (
               <label key={q.key} className={missing.has(q.key) ? "needed" : ""}>
                 <span>
-                  {q.label}
+                  {draftLabel(q)}
                   {q.required ? <b> *</b> : <small> optional</small>}
                 </span>
                 {q.kind === "choice" ? (
@@ -72,9 +73,9 @@ export function DraftEditor({ c, template, today, onClose }) {
                     ))}
                   </select>
                 ) : q.kind === "long" ? (
-                  <textarea rows={3} value={inputs[q.key] || ""} onChange={set(q.key)} placeholder={q.hint} />
+                  <textarea rows={3} value={inputs[q.key] || ""} onChange={set(q.key)} placeholder={draftHint(q)} />
                 ) : (
-                  <input value={inputs[q.key] || ""} onChange={set(q.key)} placeholder={q.hint} />
+                  <input value={inputs[q.key] || ""} onChange={set(q.key)} placeholder={draftHint(q)} />
                 )}
                 {q.kind === "choice" && q.hint ? <small>{q.hint}</small> : null}
               </label>
@@ -100,7 +101,7 @@ export function DraftEditor({ c, template, today, onClose }) {
         </div>
         <footer>
           <span className="mn-faint small">
-            {d?.status === "ready" ? "Complete. Review it, then download." : `${missing.size} ${missing.size === 1 ? "answer" : "answers"} still needed.`}
+            {d?.status === "ready" ? "Ready for review." : `${missing.size} ${missing.size === 1 ? "answer" : "answers"} still needed.`}
           </span>
           {download.error ? <span className="mn-error">{String(download.error.message)}</span> : null}
           <button type="button" className="mn-btn ink" disabled={d?.status !== "ready" || download.isPending} onClick={() => download.mutate()}>
@@ -110,4 +111,11 @@ export function DraftEditor({ c, template, today, onClose }) {
       </section>
     </div>
   );
+}
+
+function draftLabel(q) {
+  return {reason: "Reason for adjournment", previous: "Previous adjournments", provision: "Bail provision", previous_bail: "Earlier bail applications"}[q.key] || q.label;
+}
+function draftHint(q) {
+  return {applicant: "Applicant or party", reason: "State the reason", previous: "Number taken by this side", counsel: "Name for signature", previous_bail: "Court, status and outcome", grounds: "Additional grounds", roots: "Residence, family, work and surety"}[q.key] || q.hint;
 }

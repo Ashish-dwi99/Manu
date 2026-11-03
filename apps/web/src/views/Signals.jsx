@@ -3,7 +3,7 @@ import { Check, CheckCheck, ChevronDown, EyeOff, Pencil, RotateCcw } from "lucid
 import { useState } from "react";
 
 import { api } from "../api.js";
-import { countdown, formatDate, humanDates, signalKindLabel, signalTone } from "../model.js";
+import { countdown, formatDate, humanDates, signalActionLabel, signalContext, signalKindLabel, signalTone } from "../model.js";
 
 /**
  * One stall signal: the fact, the action, the evidence. The fact and what to do come
@@ -32,17 +32,17 @@ export function SignalCard({ caseId, signal, today }) {
       {stepDone ? (
         <p className="mn-signal-accepted" title="The step is done. The record has not moved, so the stall itself is not resolved.">
           <CheckCheck size={14} />
-          Step done{stepDone.at ? ` ${formatDate(stepDone.at)}` : ""}. The record has not moved since — the stall itself is not resolved.
+          Step done{stepDone.at ? ` · ${formatDate(stepDone.at)}` : ""} · issue still open
         </p>
       ) : accepted ? (
         <p className="mn-signal-accepted" title="Accepted next steps live in the case's To do and in Needs attention until done.">
           <Check size={14} />
-          On your to-do: {humanDates(accepted.what)}
+          Next step: {humanDates(accepted.what)}
           {accepted.due ? <span className="mn-when"> · {countdown(accepted.due, today)}</span> : null}
         </p>
       ) : signal.action ? (
         <div className="mn-signal-act">
-          <span className="mn-signal-action-text">{humanDates(signal.action)}</span>
+          <span className="mn-signal-action-text">{signalActionLabel(signal)}</span>
           <span className="mn-signal-foot">
             <button
               type="button"
@@ -51,7 +51,7 @@ export function SignalCard({ caseId, signal, today }) {
               title="Make this your to-do. You still do it — Manu never acts for you."
               onClick={() => accept.mutate()}
             >
-              <Check size={14} /> {accept.isPending ? "Adding…" : "Add to my to-do"}
+              <Check size={14} /> {accept.isPending ? "Adding…" : "Add step"}
             </button>
             <button
               type="button"
@@ -60,12 +60,13 @@ export function SignalCard({ caseId, signal, today }) {
               title="Tuck this away. It comes back on its own if the record changes."
               onClick={() => dismiss.mutate()}
             >
-              <EyeOff size={14} /> Tuck away
+              <EyeOff size={14} /> Hide signal
             </button>
           </span>
         </div>
       ) : (
         <div className="mn-signal-foot">
+          <a className="mn-btn small ink" href={`#/c/${caseId}`}>Review directions</a>
           <button
             type="button"
             className="mn-btn small"
@@ -73,7 +74,7 @@ export function SignalCard({ caseId, signal, today }) {
             title="Tuck this away. It comes back on its own if the record changes."
             onClick={() => dismiss.mutate()}
           >
-            <EyeOff size={14} /> Tuck away
+            <EyeOff size={14} /> Hide signal
           </button>
         </div>
       )}
@@ -86,35 +87,30 @@ export function SignalCard({ caseId, signal, today }) {
             onClick={() => reopen.mutate()}
             disabled={reopen.isPending}
           >
-            <RotateCcw size={14} /> Not done after all
+            <RotateCcw size={14} /> Reopen step
           </button>
           <button
             type="button"
             className="mn-btn small"
             disabled={dismiss.isPending}
-            title="You reviewed it: the stall itself is over. It still returns if the record changes."
+            title="Hide this reviewed signal until the record changes. This does not prove the issue is resolved."
             onClick={() => dismiss.mutate()}
           >
-            <EyeOff size={14} /> Reviewed — stop watching
+            <EyeOff size={14} /> Reviewed · stop watching
           </button>
         </div>
       ) : null}
 
-      {signal.evidence?.length ? (
-        <ul className="mn-signal-ev">
-          {signal.evidence.map((e, i) => (
-            <li key={`${e.label}:${i}`}>
-              <span>{humanDates(e.label)}</span>
-              {e.quote ? <q>{e.quote}</q> : null}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
+      <div className="mn-signal-context">{signalContext(signal.kind)}</div>
       <details className="mn-signal-more">
-        <summary>
-          <ChevronDown size={13} /> What this is, and is not
-        </summary>
+        <summary><ChevronDown size={13} /> Evidence · {signal.evidence?.length || 0}</summary>
+        {signal.evidence?.length ? <ul className="mn-signal-ev">
+          {signal.evidence.map((e, i) => <li key={`${e.label}:${i}`}>
+            <span>{humanDates(e.label)}</span>
+            {e.quote ? <q>{e.quote}</q> : null}
+          </li>)}
+        </ul> : null}
+        {signal.action ? <p><b>Proposed step:</b> {humanDates(signal.action)}</p> : null}
         <p>{humanDates(signal.detail)}</p>
       </details>
 
@@ -154,8 +150,8 @@ export function NextStepRow({ step, today }) {
             edit.mutate({ what, due }, { onSuccess: () => setEditing(false) });
           }}
         >
-          <input value={what} onChange={(e) => setWhat(e.target.value)} aria-label="Next step" maxLength={500} required />
-          <input type="date" value={due} onChange={(e) => setDue(e.target.value)} aria-label="Due date" />
+          <label className="mn-edit-field">Next step<input value={what} onChange={(e) => setWhat(e.target.value)} aria-label="Next step" maxLength={500} required /></label>
+          <label className="mn-edit-field">Due date · optional<input type="date" value={due} onChange={(e) => setDue(e.target.value)} aria-label="Due date" /></label>
           <button type="submit" className="mn-btn small ink" disabled={edit.isPending}>
             {edit.isPending ? "Saving…" : "Save"}
           </button>
@@ -175,16 +171,17 @@ export function NextStepRow({ step, today }) {
         {step.created_at ? <small>added {formatDate(step.created_at)}</small> : null}
       </span>
       <span className="mn-step-actions">
-        <button type="button" className="mn-icon small" aria-label="Edit this step" title="Edit this step" onClick={() => setEditing(true)}>
+        <button type="button" className="mn-icon small" aria-label="Edit this step" title="Edit this step" onClick={() => { setWhat(step.what); setDue(step.due || ""); setEditing(true); }}>
           <Pencil size={15} />
         </button>
-        <button type="button" className="mn-icon small" aria-label="Done" title="Done" onClick={() => update.mutate("done")}>
+        <button type="button" className="mn-icon small" aria-label="Done" title="Done" disabled={update.isPending} onClick={() => update.mutate("done")}>
           <CheckCheck size={15} />
         </button>
-        <button type="button" className="mn-icon small" aria-label="Dismiss" title="Dismiss" onClick={() => update.mutate("dismissed")}>
+        <button type="button" className="mn-icon small" aria-label="Dismiss" title="Dismiss" disabled={update.isPending} onClick={() => update.mutate("dismissed")}>
           <EyeOff size={15} />
         </button>
       </span>
+      {update.error ? <p className="mn-error" role="alert">{String(update.error.message)}</p> : null}
     </li>
   );
 }
