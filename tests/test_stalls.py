@@ -162,22 +162,124 @@ def test_dismissal_hides_a_signal_until_its_evidence_changes():
     assert "repeated_listing" in revived
 
 
-def test_accepting_a_next_step_makes_a_sourced_todo_and_tucks_the_signal():
+def test_accepting_a_next_step_makes_a_stamped_sourced_todo():
     store = CaseStore()
     c = case(hearings=[hearing(90), hearing(60), hearing(30)], next_date=TODAY + timedelta(days=10))
     store.put(c)
     live = diary.case_signals(store.get(c.id), TODAY)
-    obligation = diary.accept_signal_action(store, c.id, live[0]["id"], TODAY)
+    signal = next(s for s in live if s["kind"] == "repeated_listing")
+    obligation = diary.accept_signal_action(store, c.id, signal["id"], TODAY)
     assert obligation["who"] == "You"
     assert obligation["due"] == (TODAY + timedelta(days=10)).isoformat()
+    assert obligation["created_at"] and obligation["closed_at"] is None
     assert obligation["source"]["verification"] == "human_confirmed"
-    assert live[0]["title"] in obligation["source"]["quote"]
-    assert live[0]["id"] not in {s["id"] for s in diary.case_signals(store.get(c.id), TODAY)}
+    assert signal["title"] in obligation["source"]["quote"]
     events = store.events(c.id)
     assert events[0].kind == "action_added"
-    # The to-do survives, and the ordinary done flow still works on it.
+    # The signal quiets to an "accepted" state; it is not treated as resolved.
+    after = next(s for s in diary.case_signals(store.get(c.id), TODAY) if s["id"] == signal["id"])
+    assert after["accepted"]["id"] == obligation["id"]
+
+
+def test_accept_is_idempotent_across_tabs_and_retries():
+    store = CaseStore()
+    c = case(hearings=[hearing(90), hearing(60), hearing(30)], next_date=TODAY + timedelta(days=10))
+    store.put(c)
+    live = diary.case_signals(store.get(c.id), TODAY)
+    signal_id = next(s for s in live if s["kind"] == "repeated_listing")["id"]
+    first = diary.accept_signal_action(store, c.id, signal_id, TODAY)
+    second = diary.accept_signal_action(store, c.id, signal_id, TODAY)
+    assert first["id"] == second["id"]
+    assert len(store.get(c.id).obligations) == 1
+    assert len([e for e in store.events(c.id) if e.kind == "action_added"]) == 1
+
+
+def test_accepted_step_stays_on_the_practice_view_until_done():
+    store = CaseStore()
+    c = case(
+        hearings=[hearing(90), hearing(60), hearing(30)],
+        orders=[order(90), order(60), order(30)],
+        next_date=TODAY + timedelta(days=10),
+    )
+    store.put(c)
+    live = diary.case_signals(store.get(c.id), TODAY)
+    signal_id = next(s for s in live if s["kind"] == "repeated_listing")["id"]
+    obligation = diary.accept_signal_action(store, c.id, signal_id, TODAY)
+    body = diary.attention(store, TODAY)
+    # The accepted signal no longer asks for triage, and the step is listed instead.
+    assert body["count"] == 0
+    assert body["in_progress"][0]["next_steps"][0]["id"] == obligation["id"]
+    # Done: it leaves the practice view, and the quieted signal stays quiet.
     diary.set_obligation_status(store, c.id, obligation["id"], "done")
-    assert store.get(c.id).obligations[-1].status == "done"
+    assert diary.attention(store, TODAY)["in_progress"] == []
+    assert signal_id not in {s["id"] for s in diary.case_signals(store.get(c.id), TODAY)}
+    assert store.get(c.id).obligations[0].closed_at is not None
+    # Dismissed instead: the signal returns to triage — the stall was never acted on.
+    store2 = CaseStore()
+    store2.put(
+        case(
+            hearings=[hearing(90), hearing(60), hearing(30)],
+            orders=[order(90), order(60), order(30)],
+            next_date=TODAY + timedelta(days=10),
+        )
+    )
+    live2 = diary.case_signals(store2.get(c.id), TODAY)
+    sid = next(s for s in live2 if s["kind"] == "repeated_listing")["id"]
+    obl = diary.accept_signal_action(store2, c.id, sid, TODAY)
+    diary.set_obligation_status(store2, c.id, obl["id"], "dismissed")
+    assert sid in {s["id"] for s in diary.case_signals(store2.get(c.id), TODAY)}
+    assert diary.attention(store2, TODAY)["count"] == 1
+
+
+def test_accepted_step_survives_a_restart():
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "manu.sqlite3"
+        store = CaseStore(path)
+        c = case(hearings=[hearing(90), hearing(60), hearing(30)], next_date=TODAY + timedelta(days=10))
+        store.put(c)
+        live = diary.case_signals(store.get(c.id), TODAY)
+        signal_id = next(s for s in live if s["kind"] == "repeated_listing")["id"]
+        accepted = diary.accept_signal_action(store, c.id, signal_id, TODAY)
+        diary.set_obligation_status(store, c.id, accepted["id"], "done")
+        reopened = CaseStore(path)
+        stored = reopened.get(c.id)
+        assert stored.obligations[0].status == "done"
+        assert stored.obligations[0].closed_at is not None
+        assert stored.signal_actions[signal_id] == accepted["id"]
+        assert signal_id not in {s["id"] for s in diary.case_signals(stored, TODAY)}
+
+
+def test_another_orderless_hearing_revives_a_tucked_gap_signal():
+    store = CaseStore()
+    c = case(hearings=[hearing(30), hearing(20)])
+    store.put(c)
+    live = diary.case_signals(store.get(c.id), TODAY)
+    gap = next(s for s in live if s["kind"] == "orders_missing")
+    assert gap["evidence"][0]["label"].startswith("Hearing ·")
+    diary.dismiss_signal(store, c.id, gap["id"], TODAY)
+    assert not any(s["kind"] == "orders_missing" for s in diary.case_signals(store.get(c.id), TODAY))
+    updated = store.get(c.id)
+    updated.hearings.append(hearing(5))  # a third date, still no orders read
+    store.put(updated)
+    revived = next(s for s in diary.case_signals(store.get(c.id), TODAY) if s["kind"] == "orders_missing")
+    assert revived["id"] != gap["id"]
+    assert "3 of the last 3" in revived["title"]
+
+
+def test_hearings_arriving_out_of_order_still_read_as_a_run():
+    c = case(hearings=[hearing(30), hearing(90), hearing(60)])
+    found = stalls.signals(c, TODAY)
+    signal = next(s for s in found if s.kind == "repeated_listing")
+    assert [e.label for e in signal.evidence] == sorted(e.label for e in signal.evidence)
+
+
+def test_an_undated_open_direction_is_not_a_stall_signal():
+    o = Obligation(id="obl_u", who="You", what="Chase the order copy", source=source("order"))
+    c = case(obligations=[o], next_date=TODAY + timedelta(days=3))
+    assert "directions_waiting" not in kinds(stalls.signals(c, TODAY))
 
 
 def test_attention_view_ranks_cases_with_attention_first():

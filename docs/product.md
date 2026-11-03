@@ -60,8 +60,12 @@ and what you have to do, with the source.**
    Every signal shows its evidence and says plainly what it is not (a repeated listing is
    not, by itself, an adjournment; a gap is not proof nothing happened). Each offers a
    next step the advocate confirms into their own to-do list; dismissed signals return
-   when the record changes under them. A "Needs attention" page answers "which cases
-   need action to move forward?" across the whole practice.
+   when the record changes under them. Accepting is idempotent (no duplicates from a
+   second tab or a retried request), and an accepted step stays on the practice view
+   until it is done or dismissed — accepting work never resolves the stall. Accepted
+   to-dos are stamped (created, closed), the substrate a pilot needs to see whether
+   work moves sooner, without any claim that an alert caused it. A "Needs attention"
+   page answers "which cases need action to move forward?" across the whole practice.
 13. **Every line cites its words**: a numbered source on each fact opens the order or page
    at the quoted words, highlighted, and says whether they were found.
 

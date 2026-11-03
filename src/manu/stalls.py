@@ -101,7 +101,9 @@ def _norm(text: str) -> str:
 
 
 def _hearing_evidence(hearing: Hearing) -> Evidence:
-    label = hearing.on.isoformat()
+    # Origin first, always: the business quoted is the hearing's recorded entry, never
+    # an order's words — for a hearing whose order is missing, no order text exists.
+    label = f"Hearing · {hearing.on.isoformat()}"
     if hearing.purpose:
         label += f" · {hearing.purpose}"
     return Evidence(label=label, quote=hearing.outcome, source=hearing.source)
@@ -203,7 +205,7 @@ def _directions_waiting(case: Case, hearings: list[Hearing], open_directions: li
         ),
         evidence=[
             Evidence(
-                label=o.who + (f" · due {o.due.isoformat()}" if o.due else ""),
+                label=f"Direction · {o.who}" + (f" · due {o.due.isoformat()}" if o.due else ""),
                 quote=o.source.quote or o.what,
                 source=o.source,
             )
@@ -283,7 +285,7 @@ def _quiet_or_undated(case: Case, hearings: list[Hearing], _: list[Obligation], 
                 "what Manu holds is not proof the court did nothing — but a case with no date and no "
                 "record movement needs someone to ask after it."
             ),
-            evidence=[Evidence(label=f"Last recorded activity · {last.isoformat()}")],
+            evidence=[Evidence(label=f"Record · last activity {last.isoformat()}")],
             action="Confirm the current position from the court file or the court's own portal",
         )
     return Signal(
@@ -295,6 +297,6 @@ def _quiet_or_undated(case: Case, hearings: list[Hearing], _: list[Obligation], 
             "The case is shown as pending but no date is listed. The court may not have published one "
             "yet, or the record may be behind — Manu does not know which."
         ),
-        evidence=[Evidence(label=f"Last recorded activity · {last.isoformat()}")] if last else [],
+        evidence=[Evidence(label=f"Record · last activity {last.isoformat()}")] if last else [],
         action="Ask the court reader or check the court's own portal for the next date",
     )

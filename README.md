@@ -26,7 +26,7 @@ add a CNR and Manu gives you everything the record holds. Nobody switches modes.
 | **Import** | Type an advocate's name in the same box; follow every case found in one go |
 | **This week** | Hearings and directions for the next seven days, by day |
 | **What changed** | New orders, moved dates, directions found, each with its source |
-| **Needs attention** | The practice-wide view: every case whose record shows a stall — the same business many dates running, orders missing from the record, a direction past its date, an order and the listing disagreeing on the next date — each with its evidence and a next step you confirm. Never a verdict on anyone |
+| **Needs attention** | The practice-wide view: every case whose record shows a stall — the same business many dates running, orders missing from the record, a direction past its date, an order and the listing disagreeing on the next date — each with its evidence and a next step you confirm. Accepted steps stay listed until done. Never a verdict on anyone |
 | **Case** | Next hearing, last order, what somebody has to do, an "Is it stuck?" section with the case's own stall signals, and for criminal matters the s.479 BNSS and default-bail arithmetic with the working and the six bail facts (never a recommendation). Ask the case anything underneath |
 | **Notes and deadlines** | Your own notes of each hearing, marked as yours. A limitation calculator (appeal, revision, review, SLP, written statement) with the working, saved to the to-do |
 | **Drafts to send** | Morning cause list message and client updates (7 and 2 days before a hearing), edited, copied or opened in WhatsApp by you. Manu never sends |

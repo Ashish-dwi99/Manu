@@ -98,6 +98,11 @@ class Obligation(BaseModel):
     what: str
     due: date | None = None
     status: Literal["open", "done", "dismissed"] = "open"
+    created_at: datetime | None = None
+    """When this to-do entered the diary. None on records from before timestamps."""
+    closed_at: datetime | None = None
+    """When it was marked done or dismissed; cleared if it reopens. With created_at,
+    the substrate for "did directions get done sooner", without any causal claim."""
     source: SourceRef
     """The order, page and words that impose it. Required: an obligation with no source
     is not shown."""
@@ -200,6 +205,10 @@ class Case(BaseModel):
     dismissed_signals: list[str] = Field(default_factory=list)
     """Stall-signal ids a person tucked away. A dismissal lasts until the evidence
     changes: ids derive from the evidence, so new hearings or orders revive the signal."""
+    signal_actions: dict[str, str] = Field(default_factory=dict)
+    """Stall-signal id -> the to-do the advocate accepted for it. The signal quiets
+    while the to-do is open, but the to-do itself stays on the practice view until
+    it is done: accepting a next step never resolves the underlying stall."""
     updated_at: datetime = Field(default_factory=utc_now)
 
     @property
