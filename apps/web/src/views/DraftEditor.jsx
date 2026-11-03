@@ -3,6 +3,7 @@ import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api } from "../api.js";
+import { useFocusOnOpen } from "./common.jsx";
 
 /**
  * An application drafted from the record. The questions are what only the advocate knows;
@@ -10,6 +11,7 @@ import { api } from "../api.js";
  * advocate downloads the .docx and takes it from there.
  */
 export function DraftEditor({ c, template, today, onClose }) {
+  const dialogRef = useFocusOnOpen();
   const [inputs, setInputs] = useState({});
   const [debounced, setDebounced] = useState({});
   useEffect(() => {
@@ -43,7 +45,7 @@ export function DraftEditor({ c, template, today, onClose }) {
 
   return (
     <div className="mn-scrim" role="presentation" onMouseDown={onClose}>
-      <section className="mn-sheet-dialog wide" role="dialog" aria-label="Draft application" onMouseDown={(e) => e.stopPropagation()}>
+      <section ref={dialogRef} tabIndex={-1} className="mn-sheet-dialog wide" role="dialog" aria-modal="true" aria-label="Draft application" onMouseDown={(e) => e.stopPropagation()}>
         <header>
           <div>
             <p className="mn-eyebrow">Application draft · not filed</p>

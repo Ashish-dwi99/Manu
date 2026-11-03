@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { humanDates } from "../model.js";
@@ -90,4 +91,11 @@ export function CitePill({ n, verification, onClick, active, label }) {
       {n}
     </button>
   );
+}
+
+/** Move focus into a dialog when it opens, once. */
+export function useFocusOnOpen() {
+  const ref = useRef(null);
+  useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
+  return ref;
 }

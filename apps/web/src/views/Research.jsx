@@ -125,11 +125,11 @@ export function ResearchTab({ c }) {
             ))}
           </ul>
         ) : (
-          <p className="mn-empty">Nothing found. Searched: {data.searched.map((s) => `${s.source} (${s.outcome})`).join(", ") || "no sources connected"}.</p>
+          <p className="mn-empty">Nothing found. Searched: {data.searched.map((s) => `${s.source} (${String(s.outcome).replace(/\s*\(set [A-Z_]+\)/, "")})`).join(", ") || "no sources connected"}.</p>
         )
       ) : null}
       {data?.searched?.length ? (
-        <p className="mn-faint small mono">Searched: {data.searched.map((s) => `${s.source} — ${s.outcome}`).join(" · ")}</p>
+        <p className="mn-faint small mono">Searched: {data.searched.map((s) => `${s.source} — ${String(s.outcome).replace(/\s*\(set [A-Z_]+\)/, "")}`).join(" · ")}</p>
       ) : null}
 
       <details className="mn-check">

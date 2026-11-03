@@ -3,6 +3,7 @@ import { Check, Copy, MessageCircle, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api } from "../api.js";
+import { useFocusOnOpen } from "./common.jsx";
 import { humanDates } from "../model.js";
 
 /**
@@ -17,6 +18,7 @@ export function DraftSheet({ kind, caseId, today, onClose }) {
     queryFn: () => (kind === "cause-list" ? api.causeListMessage(today) : api.clientUpdate(caseId, today)),
   });
   const draft = query.data;
+  const dialogRef = useFocusOnOpen();
   const [text, setText] = useState("");
   const [copied, setCopied] = useState(false);
   const [client, setClient] = useState("");
@@ -51,7 +53,7 @@ export function DraftSheet({ kind, caseId, today, onClose }) {
 
   return (
     <div className="mn-scrim" role="presentation" onMouseDown={onClose}>
-      <section className="mn-sheet-dialog" role="dialog" aria-label="Draft message" onMouseDown={(e) => e.stopPropagation()}>
+      <section ref={dialogRef} tabIndex={-1} className="mn-sheet-dialog" role="dialog" aria-modal="true" aria-label="Draft message" onMouseDown={(e) => e.stopPropagation()}>
         <header>
           <div>
             <p className="mn-eyebrow">Message draft</p>

@@ -57,3 +57,27 @@ Desktop 1440x1000 and phone 390x844:
 ## Limits
 
 Every existing screen/panel type was opened, but this is not exhaustive testing of every possible combination or failure response. No live court connectivity, paid reader, OCR, real private case, outbound WhatsApp, clipboard permission variations, all legal deadline rules or every file parser failure was exercised. Dark mode was checked on Attention, not every screen. Mobile is a Chrome viewport simulation, not an iOS/Android device test. Existing source/legal text stays intact even when long. Demo mode resets by design. This does not establish real-world case-duration benefit.
+
+## Design-guidance pass (Impeccable)
+
+Impeccable (github.com/pbakaus/impeccable 4.8.0) was read as review criteria only. No install script or binary ran and nothing was added to the app. Each screen was reviewed against it for contrast, hierarchy, labels, touch, focus, and states. Reproduce: `npm run test:ui` (95 captures) and `npm run test:audit` (qa/audit.mjs: dark sweep with computed contrast on every text node, keyboard tab stops, phone touch targets, dialog focus and Escape).
+
+### Defects found and fixed
+- Contrast: faint/secondary text and amber/accent text were below 4.5:1 (amber 4.2, accent 3.9, faint about 3.4); a dark-theme citation chip was 2.2. Computed contrast is now clean on every route, tool, panel and dialog in light and dark.
+- Dialogs did not take focus when opened. They now do (Escape already closed them; verified in both themes).
+- Phone touch targets: buttons, icons, tabs, summaries and links were 18-30px high. Now 40px, except the items listed below.
+- Generated update lines showed raw ISO dates ("2026-11-21") in What changed and Record updates. Now "21 Nov 2026". Presentation only: source and order text is untouched ("08.11.2026" in a court direction stays as written). What changed no longer repeats its label inside the line.
+- Research source status showed an operator setting name; it is trimmed from the lawyer view.
+- To-do direction text was cut to one line with an ellipsis, hiding legal content; it now wraps up to three lines.
+- Signal cards: thick coloured left bar replaced by a hairline and status dot. Tiny all-caps wide-tracked labels are sentence case. Type under 12px raised. Composer shows a focus ring.
+
+### Reviewed and kept (with reason)
+- Rail and case layout, evidence-on-demand disclosures, black primary action, status colours (red liberty/deadline, amber due or unconfirmed, blue category): they carry meaning and pass contrast.
+- Dates panel keeps dd.mm.yyyy: it is a court-format list that exports to .docx.
+- Draft previews stay on a paper-white page in dark theme: it is the legal document.
+- Modals for drafts and applications: they hold work in progress and need protected focus.
+
+### Not fixed or not covered
+- Cause-list number pills on Today (22px high) and the inline citation chips are below 40px; chips have a larger invisible hit area, pills do not.
+- Composer inputs use a container ring rather than an own outline, so the keyboard audit flags the two bare inputs; the ring is visible.
+- Chrome viewport emulation only, not a device. Dark mode now swept on all routes, panels, tools and both dialogs, but not every empty/error state. No screen reader pass. No live backend or court data.
