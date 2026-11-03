@@ -54,7 +54,15 @@ and what you have to do, with the source.**
 11. **Drafting**: adjournment (O.XVII r.1 CPC / s.346 BNSS) and regular bail (s.483 / s.480
     BNSS) applications filled from the record with each paragraph's source, pausing for
     what only the advocate knows, downloaded as .docx. Never filed by Manu.
-12. **Every line cites its words**: a numbered source on each fact opens the order or page
+12. **Case progression**: stall signals read from the record itself — the same business
+   listed many dates running, orders missing from the record, a direction past its date,
+   a quiet record with no next date, an order and the listing disagreeing on the date.
+   Every signal shows its evidence and says plainly what it is not (a repeated listing is
+   not, by itself, an adjournment; a gap is not proof nothing happened). Each offers a
+   next step the advocate confirms into their own to-do list; dismissed signals return
+   when the record changes under them. A "Needs attention" page answers "which cases
+   need action to move forward?" across the whole practice.
+13. **Every line cites its words**: a numbered source on each fact opens the order or page
    at the quoted words, highlighted, and says whether they were found.
 
 ## What v1 deliberately does not do
@@ -65,6 +73,9 @@ and what you have to do, with the source.**
 * No scraping as a foundation. Connectors go official API → official public data →
   browser agent → a person. See `architecture.md`.
 * No scores for accused persons, no bail predictions, no judge analytics.
+* No blame. Stall signals describe the record, never whose fault a delay is. No outcome
+  or duration prediction: whether a case finishes faster is for a pilot to show, not a
+  number Manu invents from elapsed time.
 
 ## Next, in order
 

@@ -197,6 +197,9 @@ class Case(BaseModel):
     authorities: list[Authority] = Field(default_factory=list)
     tracked_by: list[str] = Field(default_factory=list)
     """Who follows this case: advocate ids, a court id, a client."""
+    dismissed_signals: list[str] = Field(default_factory=list)
+    """Stall-signal ids a person tucked away. A dismissal lasts until the evidence
+    changes: ids derive from the evidence, so new hearings or orders revive the signal."""
     updated_at: datetime = Field(default_factory=utc_now)
 
     @property
@@ -217,6 +220,7 @@ EventKind = Literal[
     "brief_prepared",
     "note_added",
     "deadline_added",
+    "action_added",
 ]
 
 

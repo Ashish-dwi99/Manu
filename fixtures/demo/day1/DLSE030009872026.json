@@ -1,0 +1,32 @@
+{
+  "cnr": "DLSE030009872026",
+  "case_number": "BA/1402/2026",
+  "court": "Court of ASJ-03, South District, Saket, New Delhi",
+  "title": "State v. Deepak Rana",
+  "status": "Pending",
+  "stage": "pre_charge",
+  "next_date": "@+12",
+  "next_purpose": "Arguments on bail application",
+  "hearings": [
+    {"on": "@-20", "purpose": "Bail application", "business": "Reply called from IO"}
+  ],
+  "orders": [
+    {
+      "on": "@-20",
+      "title": "Bail application — reply called",
+      "uri": "orders/DLSE030009872026/order-1.pdf",
+      "text": "Present: Ld. APP for the State. Accused produced from JC. Sh. P. Anand, Ld. counsel for the accused.\nThe IO is directed to file a reply within two weeks. Put up on {@+30} for arguments on the bail application."
+    }
+  ],
+  "raw": {
+    "particulars": {
+      "case_type": "criminal",
+      "parties": [
+        {"name": "State", "role": "state"},
+        {"name": "Deepak Rana", "role": "accused", "advocate": "P. Anand"}
+      ],
+      "charges": [{"text": "Sec. 318(4) BNS", "offence_date": "@-75"}],
+      "accused": [{"name": "Deepak Rana", "gender": "male", "custody": [{"start": "@-45", "place": "Tihar Jail No. 2"}]}]
+    }
+  }
+}

@@ -60,10 +60,30 @@ const EVENT_LABELS = {
   obligation_found: "Direction found",
   fetch_failed: "Could not read court",
   brief_prepared: "Brief prepared",
+  action_added: "Next step added",
 };
 
 export function eventLabel(kind) {
   return EVENT_LABELS[kind] || kind;
+}
+
+const SIGNAL_KINDS = {
+  repeated_listing: "Same business again",
+  directions_waiting: "Directions waiting",
+  record_conflict: "Dates disagree",
+  orders_missing: "Orders not on record",
+  quiet_record: "Quiet record",
+  awaiting_date: "No date listed",
+};
+
+/** What kind of stall a signal describes, in plain words. */
+export function signalKindLabel(kind) {
+  return SIGNAL_KINDS[kind] || "Worth a look";
+}
+
+/** Signals colour by whether someone should act now: coral asks, amber informs. */
+export function signalTone(signal) {
+  return signal?.tone === "attention" ? "coral" : "amber";
 }
 
 export function eventTone(kind) {

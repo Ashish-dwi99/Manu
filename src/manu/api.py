@@ -132,6 +132,24 @@ def create_app(
     def diary_changes(limit: int = 100) -> dict:
         return diary.changes(store, limit=max(1, min(limit, 500)))
 
+    @app.get("/api/attention")
+    def attention(on: str | None = None) -> dict:
+        return diary.attention(store, as_of(on))
+
+    @app.post("/api/cases/{case_id}/signals/{signal_id}/dismiss")
+    def dismiss_signal(case_id: str, signal_id: str, on: str | None = None) -> dict:
+        result = diary.dismiss_signal(store, case_id, signal_id, as_of(on))
+        if result is None:
+            raise HTTPException(404, "case not found")
+        return result
+
+    @app.post("/api/cases/{case_id}/signals/{signal_id}/action")
+    def accept_signal_action(case_id: str, signal_id: str, on: str | None = None) -> dict:
+        result = diary.accept_signal_action(store, case_id, signal_id, as_of(on))
+        if result is None:
+            raise HTTPException(404, "no such signal with a next step on this case")
+        return result
+
     @app.get("/api/cases")
     def cases(on: str | None = None) -> dict:
         day = as_of(on)

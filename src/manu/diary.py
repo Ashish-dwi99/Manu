@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from manu import judge
+from manu import judge, stalls
 from manu.case_state.models import Authority, Case, CaseEvent, Client, Note, Obligation, SourceRef
 from manu.case_state.store import CaseStore, new_id
 from manu.law import limitation
@@ -220,6 +220,8 @@ def case_detail(store: CaseStore, case_id: str, as_of: date) -> dict | None:
             "events": [_event(e) for e in store.events(case.id, limit=50)],
         }
     )
+    detail["signals"] = case_signals(case, as_of)
+    detail["dismissed_signals"] = sum(1 for sig in stalls.signals(case, as_of) if sig.dismissed)
     assessment = judge.assess_case(case, as_of)
     if assessment is not None:
         detail["criminal"] = {
@@ -343,6 +345,93 @@ def set_obligation_status(store: CaseStore, case_id: str, obligation_id: str, st
             store.put(case)
             return _obligation(o)
     return None
+
+
+# -- stall signals: what the record says about a case that is not moving ----------------
+
+
+def case_signals(case: Case, as_of: date) -> list[dict]:
+    """The case's live stall signals. Dismissed ones stay tucked away until their
+    evidence changes (the id derives from the evidence), then they come back."""
+    return [s.as_dict() for s in stalls.signals(case, as_of) if not s.dismissed]
+
+
+def attention(store: CaseStore, as_of: date) -> dict:
+    """The practice-wide view: every followed case whose record shows a stall signal,
+    most pressing first. This is the answer to "which cases need action to move
+    forward?" — from the record, with the evidence, never a verdict on anyone."""
+    entries = []
+    for case in store.all():
+        live = case_signals(case, as_of)
+        if not live:
+            continue
+        entry = _summary(case, as_of)
+        entry["signals"] = live
+        entry["needs_action"] = any(s["tone"] == stalls.ATTENTION for s in live)
+        entries.append(entry)
+    entries.sort(key=lambda e: (not e["needs_action"], -len(e["signals"]), e["title"]))
+    return {
+        "as_of": as_of.isoformat(),
+        "count": len(entries),
+        "signal_count": sum(len(e["signals"]) for e in entries),
+        "entries": entries,
+    }
+
+
+def dismiss_signal(store: CaseStore, case_id: str, signal_id: str, as_of: date) -> dict | None:
+    """Tuck a signal away. It resurfaces on its own when the evidence it cites changes."""
+    case = store.get(case_id)
+    if case is None:
+        return None
+    if signal_id not in case.dismissed_signals:
+        case.dismissed_signals.append(signal_id)
+        store.put(case)
+    return {"signals": case_signals(case, as_of), "dismissed": signal_id}
+
+
+def accept_signal_action(store: CaseStore, case_id: str, signal_id: str, as_of: date) -> dict | None:
+    """Turn a signal's proposed next step into a to-do the advocate owns.
+
+    The obligation is sourced to the signal's evidence and marked human-confirmed —
+    the advocate accepted it. The signal itself is tucked away: it has done its job,
+    and it will resurface if the record changes underneath it."""
+    case = store.get(case_id)
+    if case is None:
+        return None
+    signal = next((s for s in stalls.signals(case, as_of) if s.id == signal_id), None)
+    if signal is None or not signal.action:
+        return None
+    quote = "\n".join(
+        [signal.title, *[e.label + (f" — {e.quote}" if e.quote else "") for e in signal.evidence]]
+    )[:1000]
+    obligation = Obligation(
+        id=new_id("obl"),
+        who="You",
+        what=signal.action,
+        due=case.next_date,
+        source=SourceRef(
+            kind="court_record",
+            connector="manu",
+            quote=quote,
+            verification="human_confirmed",
+        ),
+    )
+    case.obligations.append(obligation)
+    if signal.id not in case.dismissed_signals:
+        case.dismissed_signals.append(signal.id)
+    store.put(case)
+    store.append(
+        [
+            CaseEvent(
+                id=new_id("evt"),
+                case_id=case.id,
+                kind="action_added",
+                summary=f"Next step added: {signal.action}",
+                source=obligation.source,
+            )
+        ]
+    )
+    return _obligation(obligation)
 
 
 # -- notes ------------------------------------------------------------------------------
