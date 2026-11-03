@@ -9,3 +9,6 @@ __pycache__/
 node_modules/
 apps/web/dist/
 .DS_Store
+
+# Browser QA captures (selected review evidence is in docs/ui-review)
+qa/screenshots/

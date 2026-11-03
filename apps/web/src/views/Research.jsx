@@ -9,8 +9,8 @@ import { Loading } from "./common.jsx";
 const STANDING = {
   official: { label: "Official copy", tone: "ok" },
   licensed: { label: "Licensed source", tone: "ok" },
-  lead: { label: "Lead — confirm from an official copy", tone: "lead" },
-  demo: { label: "Demo library — fictional, not law", tone: "demo" },
+  lead: { label: "Lead · verify official copy", tone: "lead" },
+  demo: { label: "Fictional demo · not law", tone: "demo" },
 };
 
 export function Standing({ standing }) {
@@ -20,9 +20,9 @@ export function Standing({ standing }) {
 
 const CHECK = {
   verified: { label: "Verified", tone: "ok", icon: ShieldCheck },
-  lead: { label: "Lead only — confirm", tone: "lead", icon: ShieldAlert },
+  lead: { label: "Unverified lead", tone: "lead", icon: ShieldAlert },
   demo: { label: "Demo library", tone: "demo", icon: ShieldAlert },
-  not_found: { label: "Not found in connected sources", tone: "bad", icon: ShieldAlert },
+  not_found: { label: "Not found here", tone: "bad", icon: ShieldAlert },
 };
 
 /** A judgment read by paragraph. Each paragraph can be relied on for this case, as read. */
@@ -102,12 +102,12 @@ export function ResearchTab({ c }) {
         }}
       >
         <Search size={15} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Judgments on… e.g. first-time offender 479" aria-label="Research" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search judgments" aria-label="Research" />
         {run.isPending ? <RefreshCw size={14} className="spin" /> : null}
       </form>
       {run.error ? <p className="mn-error">{String(run.error.message)}</p> : null}
       {data?.answer ? <div className="mn-answer mn-research-answer">{data.answer}</div> : null}
-      {data && !data.answer ? <p className="mn-faint small">The research agent isn't connected here ({data.reason.replace(/\.$/, "")}). These are the judgments found; open one to read it and rely on a paragraph.</p> : null}
+      {data && !data.answer ? <details className="mn-faint small"><summary>Search results only · answer service offline</summary><p>{data.reason}</p></details> : null}
       {data ? (
         data.hits.length ? (
           <ul className="mn-hits">
@@ -133,11 +133,12 @@ export function ResearchTab({ c }) {
       ) : null}
 
       <details className="mn-check">
-        <summary>Check citations in a draft</summary>
-        <textarea value={checkText} onChange={(e) => setCheckText(e.target.value)} placeholder="Paste text with citations, e.g. (2020) 5 SCC 1" rows={4} />
+        <summary>Check citations</summary>
+        <textarea value={checkText} onChange={(e) => setCheckText(e.target.value)} placeholder="Paste citations or draft text" rows={4} />
         <button type="button" className="mn-btn small" disabled={!checkText.trim() || check.isPending} onClick={() => check.mutate(checkText)}>
           Check
         </button>
+        {check.error ? <p className="mn-error" role="alert">{String(check.error.message)}</p> : null}
         {check.data ? (
           check.data.citations.length ? (
             <ul className="mn-checks">
@@ -158,7 +159,7 @@ export function ResearchTab({ c }) {
               })}
             </ul>
           ) : (
-            <p className="mn-faint small">No citation found in that text.</p>
+            <p className="mn-faint small">No citations detected.</p>
           )
         ) : null}
       </details>

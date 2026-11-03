@@ -158,7 +158,7 @@ export function App() {
                           {c.title}
                         </span>
                         <small>
-                          {c.next_date ? `${formatDate(c.next_date)} · ${countdown(c.next_date, today)}` : c.stage === "disposed" ? "Disposed" : "No date yet"}
+                          {c.next_date ? `${formatDate(c.next_date)} · ${countdown(c.next_date, today)}` : c.stage === "disposed" ? "Disposed" : "Date not recorded"}
                         </small>
                       </a>
                     ))}
@@ -172,7 +172,7 @@ export function App() {
         <div className="mn-rail-foot">
           <button type="button" className="mn-nav" onClick={() => watch.mutate()} disabled={watch.isPending}>
             <RefreshCw size={17} className={watch.isPending ? "spin" : ""} />
-            <span>{watch.isPending ? "Reading the courts…" : "Check courts now"}</span>
+            <span>{watch.isPending ? "Checking records…" : "Refresh records"}</span>
           </button>
           {watch.data ? (
             <p className="mn-rail-note">

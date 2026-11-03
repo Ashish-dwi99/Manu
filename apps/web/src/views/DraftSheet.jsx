@@ -54,7 +54,7 @@ export function DraftSheet({ kind, caseId, today, onClose }) {
       <section className="mn-sheet-dialog" role="dialog" aria-label="Draft message" onMouseDown={(e) => e.stopPropagation()}>
         <header>
           <div>
-            <p className="mn-eyebrow">Draft · you send it</p>
+            <p className="mn-eyebrow">Message draft</p>
             <h2>{kind === "cause-list" ? "Morning cause list" : `Client update · ${draft?.title || ""}`}</h2>
           </div>
           <button type="button" className="mn-icon ghost" aria-label="Close" onClick={onClose}>
@@ -72,14 +72,15 @@ export function DraftSheet({ kind, caseId, today, onClose }) {
           >
             <label>
               Client
-              <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="Name as you address them" />
+              <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="Client name" />
             </label>
             <button type="submit" className="mn-btn small" disabled={save.isPending}>
-              {save.isSuccess ? <Check size={14} /> : null} Remember for this case
+              {save.isSuccess ? <Check size={14} /> : null} Save name
             </button>
           </form>
         ) : null}
 
+        {save.error ? <p className="mn-error" role="alert">{String(save.error.message)}</p> : null}
         {query.isPending ? <p className="mn-faint">Drafting…</p> : null}
         {query.error ? <p className="mn-error">{String(query.error.message)}</p> : null}
         {draft ? (
@@ -95,7 +96,7 @@ export function DraftSheet({ kind, caseId, today, onClose }) {
               </ul>
             ) : null}
             <details className="mn-draft-sources">
-              <summary>Where these facts come from · {draft.sources.length}</summary>
+              <summary>Sources · {draft.sources.length}</summary>
               <ul>
                 {draft.sources.map((s) => (
                   <li key={s}>{humanDates(s)}</li>
@@ -103,7 +104,7 @@ export function DraftSheet({ kind, caseId, today, onClose }) {
               </ul>
             </details>
             <footer>
-              <span className="mn-faint small">Manu never sends messages. You choose who gets this.</span>
+              <span className="mn-faint small">Review and choose a recipient. Nothing sent.</span>
               <button type="button" className="mn-btn" onClick={copy}>
                 {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? "Copied" : "Copy"}
               </button>

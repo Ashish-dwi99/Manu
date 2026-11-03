@@ -50,7 +50,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
       case_title: u.title,
       when: "Client update",
       tone: "",
-      title: `Hearing ${u.days_to_hearing === 2 ? "in two days" : "in a week"}: the update is drafted, ready for you to send`,
+      title: `Review client update · hearing ${u.days_to_hearing === 2 ? "in 2 days" : "in 7 days"}`,
       sub: `Listed ${formatDate(u.next_date)}`,
       onClick: () => setDraft({ kind: "client", caseId: u.case_id }),
     })),
@@ -77,7 +77,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
         <p className="mn-eyebrow">
           {greeting()} · {formatLongDate(today)}
         </p>
-        <h1 className="mn-display">What's on the board today?</h1>
+        <h1 className="mn-display">Today in court</h1>
 
         <form
           className={`mn-composer ${cnr || advocate ? "has-cnr" : ""}`}
@@ -94,7 +94,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
               onKeyDown={(e) => {
                 if (e.key === "Escape" && advocate) switchMode("find");
               }}
-              placeholder={advocate ? "Advocate name as the court prints it, e.g. R. Mehta" : "Paste a CNR to follow a case, or find one of yours…"}
+              placeholder={advocate ? "Advocate name" : "Find a case or paste a CNR"}
               aria-label={advocate ? "Advocate name" : "CNR or case to find"}
               spellCheck={false}
               autoFocus
@@ -112,7 +112,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
             {advocate ? (
               <>
                 <span className="mn-chip-flat accent">
-                  <UserSearch size={14} /> Import every case where this advocate appears
+                  <UserSearch size={14} /> Find cases by advocate
                 </span>
                 <button type="button" className="mn-chip-flat link" onClick={() => switchMode("find")}>
                   <X size={13} /> Cancel
@@ -121,7 +121,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
             ) : cnr ? (
               <span className="mn-chip-flat accent">
                 <CornerDownLeft size={13} />
-                {known ? `Already following · open ${known.title}` : track.isPending ? "Reading the court…" : `Follow ${cnr}. Manu reads the court and every order`}
+                {known ? `Already following · open ${known.title}` : track.isPending ? "Reading the court…" : `Follow ${cnr}`}
               </span>
             ) : (
               <>
@@ -152,7 +152,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
                 ))}
               </ol>
             ) : (
-              <p className="mn-empty">None of your cases match “{text.trim()}”. Paste its 16-character CNR to follow it.</p>
+              <p className="mn-empty">No match for "{text.trim()}". Add a case with its 16-character CNR.</p>
             )}
           </div>
         ) : (
@@ -163,7 +163,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
                   <>
                     {isToday && entries.length ? (
                       <button type="button" className="mn-text-btn" onClick={() => setDraft({ kind: "cause-list" })}>
-                        <MessageCircle size={14} /> Cause list message
+                        <MessageCircle size={14} /> Draft cause list
                       </button>
                     ) : null}
                     <button type="button" className="mn-icon ghost tiny" aria-label="Previous day" onClick={() => setDay(shiftDay(day, -1))}>
@@ -178,7 +178,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
                   </>
                 }
               >
-                {isToday ? `Listed today · ${entries.length}` : `Listed ${formatLongDate(day)} · ${entries.length}`}
+                {isToday ? `Listed today${query.isSuccess ? ` · ${entries.length}` : ""}` : `Listed ${formatLongDate(day)} · ${entries.length}`}
               </SectionHead>
               {isToday && boards.data?.boards.length ? (
                 <div className="mn-boards">
@@ -187,7 +187,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
                   ))}
                 </div>
               ) : null}
-              <Loading query={query} empty={query.data && !entries.length ? "Nothing listed on this day." : null}>
+              <Loading query={query} empty={query.data && !entries.length ? "No hearings listed." : null}>
                 <ol className="mn-rows">
                   {entries.map((entry) => (
                     <BoardRow key={entry.id} entry={entry} day={day} board={isToday ? boardFor(entry.court) : null} />
@@ -198,7 +198,7 @@ export function HomeView({ today, cases, upcoming, changeCount, focusSignal }) {
 
             {needs.length ? (
               <div className="mn-block">
-                <SectionHead tools={<a className="mn-text-btn" href="#/week">This week →</a>}>Needs you</SectionHead>
+                <SectionHead tools={<a className="mn-text-btn" href="#/week">This week →</a>}>Due next</SectionHead>
                 <ol className="mn-rows">
                   {needs.slice(0, 4).map((item) => (
                     <RowLink
@@ -286,7 +286,7 @@ function ImportResults({ result, onDone }) {
     return (
       <div className="mn-block">
         <p className="mn-empty">
-          No case found for “{result.name}”.{" "}
+          No results for "{result.name}".{" "}
           {result.attempts.length ? `Tried ${result.attempts.map((a) => `${a.connector} (${a.outcome})`).join(", ")}.` : "No connector here can search by advocate."}
         </p>
       </div>
@@ -298,7 +298,7 @@ function ImportResults({ result, onDone }) {
       <div className="mn-block">
         <SectionHead>Imported</SectionHead>
         <p className="mn-empty">
-          Now following {follow.data.followed.length} more {follow.data.followed.length === 1 ? "case" : "cases"}. They are in the sidebar under their courts.
+          Following {follow.data.followed.length} new {follow.data.followed.length === 1 ? "case" : "cases"}.
           {failed.length ? ` ${failed.length} could not be read: ${failed.map(([k, v]) => `${k} — ${v}`).join("; ")}` : ""}
         </p>
         <button type="button" className="mn-btn" onClick={onDone}>
@@ -372,7 +372,7 @@ function needsYou(items, cases, today) {
       case_title: item.case_title,
       when: countdown(item.due, today),
       tone: item.overdue ? "red" : item.due === today ? "amber" : "",
-      title: `${item.who}: ${item.what}`,
+      title: item.what,
       sub: `Due ${formatDate(item.due)}`,
       rank: item.overdue ? 1 : 2,
     });
@@ -422,7 +422,7 @@ export function CaseRow({ c, today }) {
           <Labels labels={c.labels} />
         </span>
         <span className="mn-row-sub">
-          {c.next_date ? `${formatDate(c.next_date)} · ${countdown(c.next_date, today)}` : "No date yet"}
+          {c.next_date ? `${formatDate(c.next_date)} · ${countdown(c.next_date, today)}` : "Date not recorded"}
           {c.next_purpose ? ` · ${c.next_purpose}` : ""}
         </span>
       </span>

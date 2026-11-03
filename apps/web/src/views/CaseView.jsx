@@ -82,9 +82,9 @@ export function CaseView({ caseId, today }) {
               <div className="mn-case-scroll">
                 <div className="mn-case-body">
                   <NextHearing c={c} today={today} />
-                  <LastOrder c={c} cite={citeProps("order")} onRead={() => openCite(cites, numberOf("order") - 1)} />
-                  <Directions c={c} today={today} citeProps={citeProps} />
                   <Progress c={c} today={today} />
+                  <Directions c={c} today={today} citeProps={citeProps} />
+                  <LastOrder c={c} cite={citeProps("order")} onRead={() => openCite(cites, numberOf("order") - 1)} />
                   {c.criminal ? <Liberty criminal={c.criminal} today={today} /> : null}
                   <Workbench
                     c={c}
@@ -184,7 +184,7 @@ function NextHearing({ c, today }) {
       ) : null}
       {drafting ? <DraftSheet kind="client" caseId={c.id} today={today} onClose={() => setDrafting(false)} /> : null}
       <p className="mn-next-date">
-        {c.next_date ? formatDate(c.next_date) : c.stage === "disposed" ? "Disposed" : "Not listed yet"}
+        {c.next_date ? formatDate(c.next_date) : c.stage === "disposed" ? "Disposed" : "Date not recorded"}
         {c.next_date ? <span>{countdown(c.next_date, today)}</span> : null}
       </p>
       {c.next_purpose ? <p className="mn-next-purpose">{c.next_purpose}</p> : null}
@@ -261,8 +261,8 @@ function Directions({ c, today, citeProps }) {
                   <button
                     type="button"
                     className="mn-icon small"
-                    aria-label="Not a direction"
-                    title="Not a direction"
+                    aria-label={o.source.connector === "manu" ? "Dismiss step" : "Dismiss direction"}
+                    title={o.source.connector === "manu" ? "Dismiss step" : "Dismiss direction"}
                     onClick={() => update.mutate({ id: o.id, status: "dismissed" })}
                   >
                     <X size={15} />
@@ -273,6 +273,7 @@ function Directions({ c, today, citeProps }) {
           })}
         </ul>
       ) : null}
+      {update.error ? <p className="mn-error" role="alert">{String(update.error.message)}</p> : null}
       {closed.length ? (
         <details className="mn-more">
           <summary>
@@ -297,7 +298,7 @@ function Progress({ c, today }) {
   return (
     <section className="mn-part">
       <h2 className="mn-part-title">
-        Is it stuck? <span>what the record shows</span>
+        Needs attention
       </h2>
       <SignalList caseId={c.id} signals={c.signals} today={today} />
     </section>
@@ -319,7 +320,7 @@ function Workbench({ c, today, citeProps, openResearch }) {
     <section className="mn-bench">
       <div className="mn-bench-tabs" role="tablist" aria-label="Case tools">
         {tabs.map(([id, label, count]) => (
-          <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(tab === id ? null : id)}>
+          <button key={id} type="button" role="tab" aria-label={label} aria-selected={tab === id} onClick={() => setTab(tab === id ? null : id)}>
             {label}
             {count ? <small>{count}</small> : null}
           </button>
@@ -436,7 +437,7 @@ function Notes({ c, today }) {
           rows={1}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={c.next_date === today ? "What happened today? e.g. APP sought time, IO absent, arguments part-heard" : "Add a note for the diary"}
+          placeholder={c.next_date === today ? "What happened in court?" : "Add a note for the diary"}
           aria-label="New note"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && text.trim()) add.mutate();
@@ -517,7 +518,7 @@ function Limitation({ c, today, startOpen = false }) {
       <section className="mn-part">
         <button type="button" className="mn-limitation-open" onClick={() => setOpen(true)}>
           <Timer size={16} />
-          <span>Work out a deadline</span>
+          <span>Calculate deadline</span>
         </button>
       </section>
     );
@@ -532,7 +533,7 @@ function Limitation({ c, today, startOpen = false }) {
       </h2>
       <div className="mn-lim-form">
         <label>
-          What are you filing?
+          Filing type
           <select value={form.rule} onChange={set("rule")}>
             <option value="">Choose…</option>
             {Object.entries(GROUPS).map(([group, label]) => (
@@ -606,7 +607,7 @@ function Limitation({ c, today, startOpen = false }) {
             <button type="button" className="mn-btn small ink" onClick={() => save.mutate()} disabled={save.isPending || r.status === "expired"}>
               {save.isPending ? "Adding…" : "Add to to-do"}
             </button>
-            <span className="mn-faint small">Check against the Bare Act before relying on it.</span>
+            <span className="mn-faint small">Verify against the Bare Act.</span>
           </div>
           {save.error ? <p className="mn-error">{String(save.error.message)}</p> : null}
         </div>
@@ -618,7 +619,7 @@ function Limitation({ c, today, startOpen = false }) {
 }
 
 const DEFAULT_BAIL = {
-  insufficient_data: "Cannot compute — data missing",
+  insufficient_data: "Missing data · cannot calculate",
   needs_review: "Needs review",
   chargesheet_filed: "Chargesheet filed before the right accrued",
   accrued: "Right has accrued",
@@ -797,13 +798,13 @@ function Conversation({ c, openCite, openTab }) {
     <>
       {turns.length || busy ? (
         <section className="mn-part mn-thread">
-          <h2 className="mn-part-title">Asked of this case</h2>
+          <h2 className="mn-part-title">Case questions</h2>
           {turns.map((turn, i) => (
             <Turn key={i} turn={turn} docs={docs.data?.documents || []} openCite={openCite} />
           ))}
           {busy ? (
             <p className="mn-thinking">
-              <RefreshCw size={14} className="spin" /> Reading the record and papers…
+              <RefreshCw size={14} className="spin" /> Reading papers…
             </p>
           ) : null}
           <div ref={end} className="mn-thread-end" />
@@ -815,7 +816,7 @@ function Conversation({ c, openCite, openTab }) {
           <div className="mn-suggestions">
             {suggestions.map((s) => (
               <button key={s} type="button" onClick={() => submit(s)}>
-                {s}
+                {{"What did the last order direct?": "Last order", "Is the accused a first-time offender?": "Prior offences", "What was recovered?": "Recoveries", "What relief is claimed?": "Relief claimed", "When is the written statement due?": "Written statement due"}[s] || s}
               </button>
             ))}
             <button type="button" onClick={() => brief.mutate()}>
@@ -879,7 +880,7 @@ function Turn({ turn, docs, openCite }) {
                   />
                   <span>
                     “{cite.quote}”
-                    <small>{cite.verification === "missing" ? "Not found in this case's papers — do not rely on it" : cite.label}</small>
+                    <small>{cite.verification === "missing" ? "Quote not found · do not rely on it" : cite.label}</small>
                   </span>
                 </li>
               ))}
@@ -888,12 +889,10 @@ function Turn({ turn, docs, openCite }) {
         </>
       ) : null}
       {turn.data && !turn.data.answer ? (
-        <p className="mn-offline">
-          The reader isn't connected here ({turn.data.reason.replace(/\.$/, "")}). This is where the papers say it:
-        </p>
+        <details className="mn-offline"><summary>Text matches only · reader offline</summary><p>{turn.data.reason}</p></details>
       ) : null}
       {turn.data ? (
-        <MatchList matches={turn.data.matches} openCite={openCite} empty="No page mentions every word of the question. Try fewer words." />
+        <MatchList matches={turn.data.matches} openCite={openCite} empty="No text matches. Try fewer words." />
       ) : null}
     </div>
   );
