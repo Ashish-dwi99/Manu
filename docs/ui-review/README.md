@@ -57,3 +57,15 @@ Desktop 1440x1000 and phone 390x844:
 ## Limits
 
 Every existing screen/panel type was opened, but this is not exhaustive testing of every possible combination or failure response. No live court connectivity, paid reader, OCR, real private case, outbound WhatsApp, clipboard permission variations, all legal deadline rules or every file parser failure was exercised. Dark mode was checked on Attention, not every screen. Mobile is a Chrome viewport simulation, not an iOS/Android device test. Existing source/legal text stays intact even when long. Demo mode resets by design. This does not establish real-world case-duration benefit.
+
+## Design-guidance pass (Impeccable)
+
+Applied as review criteria to every existing screen (guidance read from github.com/pbakaus/impeccable 4.8.0; no install script or binary was run, nothing added to the app). All changes are in `apps/web/src/styles.css`:
+
+- Secondary text contrast raised in light and dark themes; type below 12px raised to 12px.
+- Small all-caps, wide-tracked section labels are now sentence case.
+- Signal cards: thick coloured left bar replaced by a hairline border and a status dot.
+- Quote rule thinned to 1px. Balanced headings, selection colour, button press and colour transitions. Reduced-motion rule kept.
+- No copy, legal text or behaviour changed. Not changed: generated "What changed" lines still show ISO dates (backend text).
+
+Re-run: 90 captures, no page errors, no overflow. 128 Python tests, Ruff, 16 frontend tests and build pass.
