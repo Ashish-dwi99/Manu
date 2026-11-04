@@ -129,6 +129,7 @@ def _summary(case: Case, as_of: date) -> dict:
         "title": case.title or case.cnr,
         "court": case.court,
         "stage": case.stage,
+        "route": case.route,
         "status": case.status,
         "next_date": case.next_date.isoformat() if case.next_date else None,
         "next_purpose": case.next_purpose,
@@ -205,6 +206,17 @@ def changes(store: CaseStore, *, limit: int = 100) -> dict:
     return {"events": [{**_event(e), "case_title": titles.get(e.case_id, "")} for e in store.events(limit=limit)]}
 
 
+def _fact_source(source) -> dict | None:
+    """The fetch a record fact came from, so the case page can cite it."""
+    if source is None:
+        return None
+    return {
+        "connector": source.connector,
+        "retrieved_at": source.retrieved_at.isoformat(),
+        "verification": source.verification,
+    }
+
+
 def case_detail(store: CaseStore, case_id: str, as_of: date) -> dict | None:
     case = store.get(case_id)
     if case is None:
@@ -231,6 +243,14 @@ def case_detail(store: CaseStore, case_id: str, as_of: date) -> dict | None:
             "events": [_event(e) for e in store.events(case.id, limit=50)],
         }
     )
+    detail["standing"] = {
+        # Position and route exactly as the court record states them; unknown stays
+        # unknown — the page shows the gap rather than a guessed next legal event.
+        "stage": case.stage,
+        "stage_source": _fact_source(case.stage_source),
+        "route": case.route,
+        "route_source": _fact_source(case.route_source),
+    }
     detail["signals"] = case_signals(case, as_of)
     detail["dismissed_signals"] = sum(1 for sig in stalls.signals(case, as_of) if sig.dismissed)
     assessment = judge.assess_case(case, as_of)

@@ -173,6 +173,10 @@ Stage = Literal[
     "unknown",
 ]
 
+Route = Literal["police", "complaint", "unknown"]
+"""How a criminal case reached the court: on a police report or on a private
+complaint. `unknown` until the record says; Manu never infers a route."""
+
 
 class Case(BaseModel):
     id: str
@@ -183,6 +187,11 @@ class Case(BaseModel):
     """"State v. Aamir Khan" — how the diary names it."""
     case_type: Literal["criminal", "civil", "writ", "other"] = "other"
     stage: Stage = "unknown"
+    stage_source: SourceRef | None = None
+    """The court-record fetch the stage came from. None on records from before
+    the diary kept it; the stage then shows as recorded, without a fetch to cite."""
+    route: Route = "unknown"
+    route_source: SourceRef | None = None
     status: str = ""
     """The court's own status string, verbatim."""
     parties: list[Party] = Field(default_factory=list)

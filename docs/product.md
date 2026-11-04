@@ -66,6 +66,10 @@ and what you have to do, with the source.**
    to-dos are stamped (created, closed), the substrate a pilot needs to see whether
    work moves sooner, without any claim that an alert caused it. A "Needs attention"
    page answers "which cases need action to move forward?" across the whole practice.
+   The case page opens with where the record places the matter — its stage and, for a
+   criminal case, the route, exactly as the court states them, or the gap when the
+   record is silent — beside the sourced steps that are pending. The next legal event
+   is never guessed.
 13. **Every line cites its words**: a numbered source on each fact opens the order or page
    at the quoted words, highlighted, and says whether they were found.
 

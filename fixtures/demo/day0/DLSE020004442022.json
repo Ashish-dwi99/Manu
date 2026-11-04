@@ -5,14 +5,35 @@
   "title": "State v. Imran Sheikh",
   "status": "Pending",
   "stage": "arguments",
+  "route": "police",
   "next_date": "@+18",
   "next_purpose": "Arguments on charge",
   "hearings": [
-    {"on": "@-120", "purpose": "Arguments on charge", "business": "Arguments heard in part"},
-    {"on": "@-96", "purpose": "Arguments on charge", "business": "Not reached"},
-    {"on": "@-70", "purpose": "Arguments on charge", "business": "Arguments heard in part"},
-    {"on": "@-41", "purpose": "Arguments on charge", "business": "Written synopsis to be filed"},
-    {"on": "@-13", "purpose": "Arguments on charge", "business": "Arguments heard in part"}
+    {
+      "on": "@-120",
+      "purpose": "Arguments on charge",
+      "business": "Arguments heard in part"
+    },
+    {
+      "on": "@-96",
+      "purpose": "Arguments on charge",
+      "business": "Not reached"
+    },
+    {
+      "on": "@-70",
+      "purpose": "Arguments on charge",
+      "business": "Arguments heard in part"
+    },
+    {
+      "on": "@-41",
+      "purpose": "Arguments on charge",
+      "business": "Written synopsis to be filed"
+    },
+    {
+      "on": "@-13",
+      "purpose": "Arguments on charge",
+      "business": "Arguments heard in part"
+    }
   ],
   "orders": [
     {
@@ -32,12 +53,32 @@
     "particulars": {
       "case_type": "criminal",
       "parties": [
-        {"name": "State", "role": "state"},
-        {"name": "Imran Sheikh", "role": "accused", "advocate": "V. Rao"}
+        {
+          "name": "State",
+          "role": "state"
+        },
+        {
+          "name": "Imran Sheikh",
+          "role": "accused",
+          "advocate": "V. Rao"
+        }
       ],
-      "charges": [{"text": "Sec. 316(2) BNS", "offence_date": "@-640"}],
+      "charges": [
+        {
+          "text": "Sec. 316(2) BNS",
+          "offence_date": "@-640"
+        }
+      ],
       "chargesheet_filed_on": "@-420",
-      "accused": [{"name": "Imran Sheikh", "gender": "male", "first_offender": true, "other_pending_cases": 0, "custody": []}]
+      "accused": [
+        {
+          "name": "Imran Sheikh",
+          "gender": "male",
+          "first_offender": true,
+          "other_pending_cases": 0,
+          "custody": []
+        }
+      ]
     }
   }
 }

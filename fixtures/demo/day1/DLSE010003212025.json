@@ -5,6 +5,7 @@
   "title": "State v. Deepak",
   "status": "Pending",
   "stage": "charge",
+  "route": "police",
   "next_date": "@+0",
   "next_purpose": "Arguments on charge",
   "orders": [

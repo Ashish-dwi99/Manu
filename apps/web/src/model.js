@@ -287,3 +287,30 @@ export function signalActionLabel(signal) {
     awaiting_date: "Check the next listing",
   }[signal.kind] || signal.action;
 }
+
+/* -- where the record places the case ---------------------------------------------------- */
+
+// The recorded stage and route are echoed, never mapped onto a legal flow: a stage word
+// from the record does not establish which stages the case has traversed or what comes
+// next, so the UI shows the words and any gap, and nothing more.
+
+const STAGE_LABELS = {
+  investigation: "Investigation",
+  pre_charge: "Pre-charge",
+  charge: "Charge",
+  evidence: "Evidence",
+  arguments: "Arguments",
+  reserved: "Reserved for judgment",
+  disposed: "Disposed",
+  pleadings: "Pleadings",
+};
+
+/** The recorded stage in plain words; empty when the record does not say. */
+export function stageLabel(stage) {
+  return STAGE_LABELS[stage] || "";
+}
+
+/** The recorded prosecution route in plain words; empty when the record does not say. */
+export function routeLabel(route) {
+  return route === "police" ? "Police case" : route === "complaint" ? "Complaint case" : "";
+}

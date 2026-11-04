@@ -168,3 +168,19 @@ def test_an_accepted_step_can_be_edited_over_the_api_but_a_direction_cannot():
     direction = next(o for o in directions if o["source"]["kind"] in {"order", "listing"})
     refused = c.post(f"/api/cases/{case_id}/obligations/{direction['id']}/edit", json={"what": "nicer wording"})
     assert refused.status_code == 400
+
+
+def test_case_detail_places_the_case_from_the_record_without_guessing():
+    c = client()
+    cases = c.get("/api/cases").json()["cases"]
+    aamir = next(x for x in cases if x["cnr"] == "DLSE010001232024")
+    standing = c.get(f"/api/cases/{aamir['id']}", params={"on": TODAY.isoformat()}).json()["standing"]
+    assert standing["stage"] == "evidence"
+    assert standing["route"] == "police"
+    assert standing["stage_source"]["connector"]
+    # The bail application whose record says nothing about a route shows the gap.
+    bail = next(x for x in cases if x["cnr"] == "DLSE010007892026")
+    gap = c.get(f"/api/cases/{bail['id']}", params={"on": TODAY.isoformat()}).json()["standing"]
+    assert gap["stage"] == "investigation"
+    assert gap["route"] == "unknown"
+    assert gap["route_source"] is None

@@ -5,10 +5,15 @@
   "title": "State v. Deepak Rana",
   "status": "Pending",
   "stage": "pre_charge",
+  "route": "police",
   "next_date": "@+12",
   "next_purpose": "Arguments on bail application",
   "hearings": [
-    {"on": "@-20", "purpose": "Bail application", "business": "Reply called from IO"}
+    {
+      "on": "@-20",
+      "purpose": "Bail application",
+      "business": "Reply called from IO"
+    }
   ],
   "orders": [
     {
@@ -22,11 +27,34 @@
     "particulars": {
       "case_type": "criminal",
       "parties": [
-        {"name": "State", "role": "state"},
-        {"name": "Deepak Rana", "role": "accused", "advocate": "P. Anand"}
+        {
+          "name": "State",
+          "role": "state"
+        },
+        {
+          "name": "Deepak Rana",
+          "role": "accused",
+          "advocate": "P. Anand"
+        }
       ],
-      "charges": [{"text": "Sec. 318(4) BNS", "offence_date": "@-75"}],
-      "accused": [{"name": "Deepak Rana", "gender": "male", "custody": [{"start": "@-45", "place": "Tihar Jail No. 2"}]}]
+      "charges": [
+        {
+          "text": "Sec. 318(4) BNS",
+          "offence_date": "@-75"
+        }
+      ],
+      "accused": [
+        {
+          "name": "Deepak Rana",
+          "gender": "male",
+          "custody": [
+            {
+              "start": "@-45",
+              "place": "Tihar Jail No. 2"
+            }
+          ]
+        }
+      ]
     }
   }
 }

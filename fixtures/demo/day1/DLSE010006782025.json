@@ -5,6 +5,7 @@
   "title": "State v. Vikas Yadav",
   "status": "Pending",
   "stage": "charge",
+  "route": "police",
   "next_date": "@+2",
   "next_purpose": "Arguments on charge",
   "orders": [

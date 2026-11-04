@@ -101,6 +101,13 @@ def apply_record(case: Case, fetch: FetchResult, *, read_old_orders: bool = Fals
         if case.stage != "unknown":
             event("stage_changed", f"Stage moved to {record.stage}.", before=case.stage, after=record.stage)
         case.stage = record.stage  # type: ignore[assignment]
+        case.stage_source = record_source
+    route = record.route.strip().lower()
+    if route in ("police", "complaint") and route != case.route:
+        # The route is the record's own statement; an unstated route stays unknown
+        # rather than being guessed from the case type or the parties.
+        case.route = route  # type: ignore[assignment]
+        case.route_source = record_source
 
     if record.next_date != case.next_date or (record.next_purpose and record.next_purpose != case.next_purpose):
         before = f"{case.next_date.isoformat() if case.next_date else '—'} {case.next_purpose}".strip()

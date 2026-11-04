@@ -89,6 +89,9 @@ class CourtRecord(BaseModel):
     title: str = ""
     status: str = ""
     stage: str = ""
+    route: str = ""
+    """How the case reached the court, as the record states it: "police" or
+    "complaint". Empty when the record does not say; Manu never infers it."""
     next_date: date | None = None
     next_purpose: str = ""
     disposed: bool = False
