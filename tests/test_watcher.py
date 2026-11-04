@@ -93,3 +93,23 @@ def test_first_follow_is_one_summary_event_not_a_burst_of_changes():
     assert [e.kind for e in events] == ["tracked"]
     assert "listed 2026-09-24" in events[0].summary and "direction(s)" in events[0].summary
     assert case.obligations, "directions from the latest order are still recorded"
+
+
+def test_stage_and_route_carry_the_records_own_fetch_as_source():
+    store = CaseStore()
+    connector = Fake(CourtRecord(cnr="DLSE010001232024", stage="evidence", route="police"))
+    case, _ = CourtWatcher(store, ConnectorLadder([connector])).track("DLSE010001232024")
+    stored = store.get(case.id)
+    assert stored.stage == "evidence"
+    assert stored.stage_source is not None and stored.stage_source.connector == "fake"
+    assert stored.route == "police"
+    assert stored.route_source is not None and stored.route_source.connector == "fake"
+
+
+def test_an_unstated_route_stays_unknown_not_guessed():
+    store = CaseStore()
+    connector = Fake(CourtRecord(cnr="DLSE010001232024", stage="charge"))
+    case, _ = CourtWatcher(store, ConnectorLadder([connector])).track("DLSE010001232024")
+    stored = store.get(case.id)
+    assert stored.route == "unknown"
+    assert stored.route_source is None

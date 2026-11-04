@@ -5,6 +5,7 @@
   "title": "State v. Aamir Khan",
   "status": "Pending",
   "stage": "evidence",
+  "route": "police",
   "next_date": "@+0",
   "next_purpose": "Arguments on bail application",
   "hearings": [
@@ -28,7 +29,7 @@
     },
     {
       "on": "@-14",
-      "title": "Bail application \u2014 reply called",
+      "title": "Bail application — reply called",
       "uri": "orders/DLSE010001232024/order-2.pdf",
       "text": "Present: Ld. APP for the State. Accused produced from JC. Sh. R. Mehta, Ld. counsel for the accused.\nAn application for regular bail under Section 483 BNSS has been filed on behalf of the accused. The IO is directed to file a reply along with the previous involvement report of the accused within two weeks. Ld. counsel for the accused shall supply an advance copy of the application to the Ld. APP. Put up on {@+0} for arguments on the bail application."
     }

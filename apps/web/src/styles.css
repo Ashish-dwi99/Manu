@@ -1836,6 +1836,75 @@ kbd {
   gap: 4px;
 }
 
+/* stage: where the record places the case */
+
+.mn-standing {
+  display: grid;
+  gap: 10px;
+}
+
+.mn-standing-stage {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.mn-standing-line,
+.mn-standing-route {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.mn-standing-pending {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mn-standing-pending li {
+  align-items: baseline;
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mn-standing-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mn-standing-pending li small {
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.mn-standing-pending li.late small {
+  color: var(--red);
+}
+
+.mn-standing-kind {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink-faint);
+  flex: none;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  padding: 1px 5px;
+  text-transform: uppercase;
+}
+
+.mn-standing-none {
+  color: var(--ink-faint);
+}
+
 /* ask */
 
 .mn-case-composer {

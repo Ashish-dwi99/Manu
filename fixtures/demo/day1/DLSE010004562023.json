@@ -5,6 +5,7 @@
   "title": "State v. Ritu Sharma",
   "status": "Pending",
   "stage": "evidence",
+  "route": "police",
   "next_date": "@+0",
   "next_purpose": "Prosecution evidence",
   "orders": [

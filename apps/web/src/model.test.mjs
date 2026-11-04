@@ -112,3 +112,21 @@ test("scan labels do not change the actual proposed step", () => {
   assert.equal(s.action, "Upload orders or verify from court file");
   assert.equal(signalActionLabel({ kind: "unknown", action: "Review record" }), "Review record");
 });
+
+import { routeLabel, stageLabel } from "./model.js";
+
+test("the recorded stage is echoed, never mapped to a flow", () => {
+  assert.equal(stageLabel("evidence"), "Evidence");
+  assert.equal(stageLabel("pre_charge"), "Pre-charge");
+  assert.equal(stageLabel("reserved"), "Reserved for judgment");
+  assert.equal(stageLabel("disposed"), "Disposed");
+  assert.equal(stageLabel("pleadings"), "Pleadings");
+});
+
+test("stage and route labels never invent a value", () => {
+  assert.equal(stageLabel("pre_charge"), "Pre-charge");
+  assert.equal(stageLabel("unknown"), "");
+  assert.equal(routeLabel("police"), "Police case");
+  assert.equal(routeLabel("complaint"), "Complaint case");
+  assert.equal(routeLabel("unknown"), "");
+});

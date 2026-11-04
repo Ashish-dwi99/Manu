@@ -3,7 +3,7 @@ import { ArrowUp, Check, CheckCheck, ChevronDown, FilePen, FileText, MessageCirc
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api.js";
-import { countdown, courtLabel, formatDate, humanDates, s479Headline, timeAgo } from "../model.js";
+import { countdown, courtLabel, formatDate, humanDates, routeLabel, s479Headline, stageLabel, timeAgo, verificationLabel } from "../model.js";
 import { CitePill, Labels, Loading } from "./common.jsx";
 import { DraftEditor } from "./DraftEditor.jsx";
 import { DraftSheet } from "./DraftSheet.jsx";
@@ -82,6 +82,7 @@ export function CaseView({ caseId, today }) {
               <div className="mn-case-scroll">
                 <div className="mn-case-body">
                   <NextHearing c={c} today={today} />
+                  <StageSection c={c} today={today} citeProps={citeProps} />
                   <Progress c={c} today={today} />
                   <Directions c={c} today={today} citeProps={citeProps} />
                   <LastOrder c={c} cite={citeProps("order")} onRead={() => openCite(cites, numberOf("order") - 1)} />
@@ -194,6 +195,61 @@ function NextHearing({ c, today }) {
           {where.join(" · ")}
         </p>
       ) : null}
+    </section>
+  );
+}
+
+/**
+ * Where the record places the case: the stage and, for a criminal matter, the route,
+ * echoed exactly as the court states them, with the sourced steps that are pending.
+ * No flow rail: the record's stage words do not establish which stages a case has
+ * been through or what comes next, so nothing here implies progress. A gap in the
+ * record is shown as a gap.
+ */
+function StageSection({ c, today, citeProps }) {
+  const st = c.standing;
+  if (!st) return null;
+  const open = openByDue(c.obligations);
+  const source = st.stage_source || st.route_source;
+  const stage = stageLabel(st.stage);
+  const route = c.criminal ? routeLabel(st.route) : "";
+  const recorded = [route, c.status].filter(Boolean).join(" · ");
+  return (
+    <section className="mn-part mn-standing">
+      <h2 className="mn-part-title">Stage</h2>
+      {stage ? <p className="mn-standing-stage">{stage}</p> : <p className="mn-gap">Stage not on record</p>}
+      {c.criminal && !route ? <p className="mn-gap">Route not on record</p> : null}
+      {recorded ? <p className="mn-standing-line">{recorded}</p> : null}
+      <ol className="mn-standing-pending">
+        {c.next_date ? (
+          <li>
+            <span className="mn-standing-kind">Listed</span>
+            <span className="mn-standing-text">
+              {formatDate(c.next_date)}
+              {c.next_purpose ? ` — ${c.next_purpose}` : ""}
+            </span>
+            <small>{countdown(c.next_date, today)}</small>
+          </li>
+        ) : null}
+        {open.slice(0, 5).map((o) => (
+          <li key={o.id} className={o.due && o.due < today ? "late" : ""} title={`${o.who} — ${o.what}`}>
+            <span className="mn-standing-kind">To do</span>
+            <span className="mn-standing-text">
+              {o.who} — {humanDates(o.what)}
+            </span>
+            <CitePill {...citeProps(o.id)} />
+            <small>{o.due ? countdown(o.due, today) : "no date"}</small>
+          </li>
+        ))}
+        {open.length > 5 ? <li className="mn-standing-none">+ {open.length - 5} more under To do</li> : null}
+        {!c.next_date && !open.length ? <li className="mn-standing-none">No pending step on record</li> : null}
+      </ol>
+      <small className="mn-fact-source" title={source ? `Read ${timeAgo(source.retrieved_at)}` : undefined}>
+        <FileText size={12} />{" "}
+        {source
+          ? `Court record · ${source.connector}${["lead", "unverified"].includes(source.verification) ? ` · ${verificationLabel(source.verification)}` : ""}`
+          : "Court record"}
+      </small>
     </section>
   );
 }

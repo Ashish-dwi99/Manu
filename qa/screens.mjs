@@ -40,6 +40,8 @@ try {
  const db=p.locator('.mn-draft-buttons button');if(await db.count()){await db.first().click();await p.locator('.mn-questions label').first().waitFor();await shot('17-application-draft');await p.getByRole('button',{name:'Close',exact:true}).click();}
  await p.getByRole('button',{name:'Draft a client update',exact:true}).click();await p.locator('textarea.mn-draft').waitFor();await p.waitForFunction(()=>document.querySelector('textarea.mn-draft')?.value.length>0);await shot('18-client-draft');await p.getByRole('button',{name:'Close',exact:true}).click();
  await open('/c/'+civil.id);await shot('19-civil-case');
+ const noroute=data.cases.find(c=>c.title==='State v. Imran & Anr.');
+ await open('/c/'+noroute.id);await p.locator('.mn-standing').waitFor();await shot('19b-case-stage-gap');
  await p.getByRole('tab',{name:'Deadline',exact:true}).click();await p.locator('.mn-limitation').scrollIntoViewIfNeeded();const options=await p.locator('.mn-lim-form select').first().locator('option').allTextContents();await p.locator('.mn-lim-form select').first().selectOption({index:1});await p.locator('.mn-lim-result').waitFor();await shot('20-deadline-result');
  await p.setViewportSize({width:390,height:844});
  for(const [route,name] of [['/','21-today-phone'],['/attention','22-attention-phone'],['/week','23-week-phone'],['/changes','24-changes-phone'],['/c/'+imran.id,'25-case-phone']]){await open(route);await shot(name);checks.push([name,'overflow',await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth)]);}
